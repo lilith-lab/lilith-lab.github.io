@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>lilith lab — progetti</title>
+<link rel="stylesheet" href="stile.css">
+<script defer src="progetti.js"></script>
+<script defer src="pagina.js"></script>
+</head>
+<body>
+<svg class="grana" aria-hidden="true" focusable="false">
+  <filter id="grana-filtro">
+    <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" stitchTiles="stitch"/>
+    <feColorMatrix type="saturate" values="0"/>
+  </filter>
+  <rect width="100%" height="100%" filter="url(#grana-filtro)"/>
+</svg>
+<div class="scanline" aria-hidden="true"></div>
+<div class="esadecimali esadecimali-sinistra" aria-hidden="true"><div class="esadecimali-nastro"></div></div>
+<div class="esadecimali esadecimali-destra" aria-hidden="true"><div class="esadecimali-nastro"></div></div>
+
+<div class="fascia" data-parte="fascia">
+  <div class="fascia-dentro">
+    <p class="fascia-titolo" data-testo="fasciaTitolo"></p>
+    <p class="fascia-testo" data-testo="fasciaTesto"></p>
+  </div>
+</div>
+
+<header class="testata">
+  <div class="cielo" aria-hidden="true">
+    <div class="sole"><div class="sole-disco"></div></div>
+    <div class="orizzonte"><div class="griglia"></div></div>
+  </div>
+  <div class="rec" aria-hidden="true"><span class="rec-punto">●</span> REC <span class="rec-tempo" id="rec-tempo">00:00:00</span></div>
+  <div class="testata-testi">
+    <h1 class="marchio" data-testo="marchio"></h1>
+    <p class="sottotitolo" data-testo="sottotitolo"></p>
+  </div>
+</header>
+
+<main class="contenuto">
+  <p class="presentazione" data-testo="presentazione"></p>
+  <div class="schede" id="schede"></div>
+</main>
+
+<footer class="piede"><p data-testo="piede"></p></footer>
+</body>
+</html>
