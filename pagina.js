@@ -6,14 +6,14 @@ const TESTI = {
   menuApri: 'Progetti',
   fasciaTitolo: 'ALPHA · LAVORI IN CORSO',
   fasciaTesto: 'Versioni in sviluppo, da provare così come sono: ogni segnalazione aiuta a migliorarle.',
-  presentazione: 'Per ogni progetto trovi il trailer, i primi passi, il pacchetto da scaricare e il modulo per i feedback. Trailer, download e modulo si aprono con l\'account Google a cui è arrivato l\'invito.',
+  presentazione: 'Per ogni progetto trovi il trailer, i primi passi, il pacchetto da scaricare e la cartella dove caricare i feedback. Trailer, download e cartella si aprono con l\'account Google a cui è arrivato l\'invito.',
   etichetta: 'alpha · ',
   consegna: 'consegna del ',
   sistemi: 'Sistemi',
   istruzioni: 'Come si usa',
   scarica: 'Scarica',
   scaricaSpento: 'Scarica · in arrivo',
-  feedback: 'Invia un feedback',
+  feedback: 'Carica un feedback',
   feedbackSpento: 'Feedback · in arrivo',
   trailerSpento: 'trailer in arrivo',
   trailerApri: 'Apri il trailer su Drive',
@@ -38,8 +38,8 @@ const TESTI = {
 const MODELLO_DATA = /^\d{4}-\d{2}-\d{2}$/;
 // La forma di «Copia link» di Drive: https://drive.google.com/file/d/<id>/view?usp=sharing
 const MODELLO_DRIVE = /^https:\/\/drive\.google\.com\/file\/d\/([\w-]+)\/view(\?[^#\s]*)?$/;
-// La forma del link precompilato di Google Moduli, con PROGETTO come risposta da sostituire.
-const MODELLO_MODULO = /^https:\/\/docs\.google\.com\/forms\/d\/e\/[\w-]+\/viewform\?[^#\s]*=PROGETTO(&[^#\s]*)?$/;
+// La forma di «Copia link» di una cartella di Drive: https://drive.google.com/drive/folders/<id>?usp=sharing
+const MODELLO_CARTELLA = /^https:\/\/drive\.google\.com\/drive\/folders\/([\w-]+)(\?[^#\s]*)?$/;
 
 // La data si guarda col modello prima di leggerla, e si legge in UTC perché il fuso non sposti il giorno.
 function scriviData(testo) {
@@ -160,10 +160,9 @@ function disegnaScarica(voce) {
   return disegnaAzione(voce.scarica, TESTI.scarica, TESTI.scaricaSpento, 'scarica', 'scarica');
 }
 
-// Il link del modulo col nome del progetto già scritto; un link in un'altra forma non si usa.
-function linkFeedback(voce, modulo = MODULO_FEEDBACK) {
-  if (!MODELLO_MODULO.test(modulo)) return '';
-  return modulo.replace('=PROGETTO', '=' + encodeURIComponent(voce.nome));
+// La cartella di Drive dove si carica il file di feedback del progetto; un link in un'altra forma non si usa.
+function linkFeedback(voce) {
+  return MODELLO_CARTELLA.test(voce.feedback || '') ? voce.feedback : '';
 }
 
 function disegnaFeedback(voce) {

@@ -1,5 +1,6 @@
 // Le schede della pagina: una voce per progetto, nell'ordine in cui si vedono.
 // data: AAAA-MM-GG. trailer e scarica: i link di «Copia link» di Drive; vuoti, la scheda mostra «in arrivo».
+// feedback: il link di «Copia link» della cartella di Drive dove si carica il file di feedback; vuoto, «in arrivo».
 const PROGETTI = [
   {
     id: 'tracker-brani',
@@ -16,7 +17,8 @@ const PROGETTI = [
       'Niente brani sotto mano? In kit-prova c\'è una board di esempio da importare. Qualcosa non va: menu «?», «Segnala…».'
     ],
     trailer: 'https://drive.google.com/file/d/10v4L-stwDurVjfiwLWDpIKi_aifKRsCB/view?usp=drive_link',
-    scarica: 'https://drive.google.com/file/d/11UvtxqH68slIZbFRk3RR-t6Bj89gaaKC/view?usp=drive_link'
+    scarica: 'https://drive.google.com/file/d/11UvtxqH68slIZbFRk3RR-t6Bj89gaaKC/view?usp=drive_link',
+    feedback: 'https://drive.google.com/drive/folders/1GzHprTpamirXVvw-Z5EIaxBbdfJS9IPs?usp=drive_link'
   },
   {
     id: 'guida-secondo-cervello',
@@ -33,7 +35,8 @@ const PROGETTI = [
       'In modelli ci sono gli otto file da copiare per costruire il tuo.'
     ],
     trailer: 'https://drive.google.com/file/d/1vZdEN6hOW6NHdXWc9Jnrw0zXiI8NFiii/view?usp=drive_link',
-    scarica: 'https://drive.google.com/file/d/1lWcHe3t9jXzAl3hSPJHtEvVARd3cMbxB/view?usp=drive_link'
+    scarica: 'https://drive.google.com/file/d/1lWcHe3t9jXzAl3hSPJHtEvVARd3cMbxB/view?usp=drive_link',
+    feedback: 'https://drive.google.com/drive/folders/15pAyvwMObbA6D_m3NtzBTJ24KClegYvq?usp=drive_link'
   },
   {
     id: 'template-evento',
@@ -50,10 +53,7 @@ const PROGETTI = [
       'Il pulsante «Guida» spiega il resto. Un\'idea o un errore: «Segnala…» nella pagina, e mandami il testo.'
     ],
     trailer: 'https://drive.google.com/file/d/1kp6VBonjMjLKTggifzF3PIszrCwnZ4Qs/view?usp=drive_link',
-    scarica: 'https://drive.google.com/file/d/1q1h98Zuobl7NC2V-ARwGi9tRCH-JnIhX/view?usp=drive_link'
+    scarica: 'https://drive.google.com/file/d/1q1h98Zuobl7NC2V-ARwGi9tRCH-JnIhX/view?usp=drive_link',
+    feedback: 'https://drive.google.com/drive/folders/1aEifvErOkzth_QT1OLxrSKt77AAH6Rn4?usp=drive_link'
   }
 ];
-
-// Il modulo dei feedback, su Google Moduli: il link di «Modulo precompilato» con PROGETTO come risposta alla domanda
-// del progetto. Ogni scheda lo apre col suo nome al posto di PROGETTO; vuoto, i bottoni restano spenti, «in arrivo».
-const MODULO_FEEDBACK = '';
