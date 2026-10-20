@@ -24,7 +24,8 @@ const TESTI = {
   criptatoTesto: 'Mi spiace, non hai accesso a questo materiale.',
   criptatoInvito: '› Hai l\'invito? Clicca ed entra con quell\'account Google.',
   portaSigla: '▓▓ ACCESSO RISERVATO ▓▓',
-  portaBenvenuto: 'Benvenuto, straniero. Anzi, dovrei chiamarti l\'eletto.',
+  // Il benvenuto in due righe, con l'a capo nel testo: nell'intro la seconda arriva dopo la prima.
+  portaBenvenuto: 'Benvenuto straniero...\no dovrei chiamarti... l\'eletto',
   portaApri: 'Apri la porta',
   piede: 'lilith lab · versioni alpha su invito',
   mesi: ['gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno', 'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre']
@@ -240,9 +241,11 @@ function preparaMenu(menu = document.getElementById('menu')) {
 // La porta: si apre una volta per scheda del browser. Finché è chiusa, quello che c'è dietro non si raggiunge col Tab.
 const CHIAVE_PORTA = 'lilith-porta';
 const DURATA_PORTA = 1800;
-// L'intro: la frase si decodifica in 40 passi da 40 ms, poi la porta entra in 1,3 s. Un clic la salta.
+// L'intro: ogni riga si decodifica in 40 passi da 40 ms, la seconda 2 s dopo la prima; poi la porta entra in 1,3 s.
+// Un clic la salta.
 const PASSO_DECODIFICA = 40;
 const PASSI_DECODIFICA = 40;
+const PAUSA_RIGHE = 2000;
 const DURATA_ENTRATA = 1300;
 const SEGNI_DECODIFICA = '0123456789ABCDEF#%&*+=/';
 const INTRO = new WeakMap();
@@ -273,8 +276,9 @@ function preparaPorta(porta = document.getElementById('porta')) {
   else avviaIntro(porta);
 }
 
-// La frase si decodifica da sinistra a destra: le lettere non ancora lette cambiano a ogni passo, gli spazi restano.
-function decodifica(el, testo, fatto) {
+// Una riga si decodifica da sinistra a destra: le lettere non ancora lette cambiano a ogni passo, gli spazi restano.
+// Il prefisso è quello che sta già scritto davanti: la prima riga, quando si legge la seconda.
+function decodifica(el, testo, fatto, prefisso = '') {
   let passo = 0;
   const timer = setInterval(() => {
     passo++;
@@ -283,7 +287,7 @@ function decodifica(el, testo, fatto) {
     for (let i = lette; i < testo.length; i++) {
       riga += testo[i] === ' ' ? ' ' : SEGNI_DECODIFICA[Math.floor(Math.random() * SEGNI_DECODIFICA.length)];
     }
-    el.textContent = riga;
+    el.textContent = prefisso + riga;
     if (passo >= PASSI_DECODIFICA) {
       clearInterval(timer);
       fatto();
@@ -292,15 +296,22 @@ function decodifica(el, testo, fatto) {
   return timer;
 }
 
-// L'intro: su nero, prima la frase che si decodifica, poi la porta che entra; un clic la salta.
+// L'intro: su nero, la prima riga che si decodifica, una pausa, la seconda riga sotto di lei, poi la porta che entra;
+// un clic la salta.
 function avviaIntro(porta) {
   const stato = { salta: () => mostraPorta(porta), timer: null, fine: null };
   INTRO.set(porta, stato);
   porta.classList.add('porta-intro');
   porta.addEventListener('click', stato.salta);
-  stato.timer = decodifica(porta.querySelector('.porta-decodifica'), TESTI.portaBenvenuto, () => {
-    porta.classList.add('porta-entra');
-    stato.fine = setTimeout(() => mostraPorta(porta), DURATA_ENTRATA);
+  const el = porta.querySelector('.porta-decodifica');
+  const [prima, seconda] = TESTI.portaBenvenuto.split('\n');
+  stato.timer = decodifica(el, prima, () => {
+    stato.fine = setTimeout(() => {
+      stato.timer = decodifica(el, seconda, () => {
+        porta.classList.add('porta-entra');
+        stato.fine = setTimeout(() => mostraPorta(porta), DURATA_ENTRATA);
+      }, prima + '\n');
+    }, PAUSA_RIGHE);
   });
 }
 
