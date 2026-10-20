@@ -25,8 +25,12 @@ const TESTI = {
   criptatoInvito: '› Hai l\'invito? Clicca ed entra con quell\'account Google.',
   portaSigla: '▓▓ ACCESSO RISERVATO ▓▓',
   // Il benvenuto in due righe, con l'a capo nel testo: nell'intro la seconda arriva dopo la prima.
-  portaBenvenuto: 'Benvenuto straniero...\no dovrei chiamarti... l\'eletto',
+  portaBenvenuto: 'benvenuto straniero.\no dovrei chiamarti: l\'eletto',
+  portaBussa: 'premi per entrare',
   portaApri: 'Apri la porta',
+  suoniAccesi: '♪ suoni accesi',
+  suoniSpenti: '♪ suoni spenti',
+  suoniIcona: '♪',
   piede: 'lilith lab · versioni alpha su invito',
   mesi: ['gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno', 'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre']
 };
@@ -242,13 +246,16 @@ function preparaMenu(menu = document.getElementById('menu')) {
 const CHIAVE_PORTA = 'lilith-porta';
 const DURATA_PORTA = 1800;
 // L'intro: ogni riga si decodifica in 40 passi da 40 ms, la seconda 2 s dopo la prima; poi la porta entra in 1,3 s.
-// Un clic la salta.
+// Un clic la salta. Parte da un tocco, che sblocca anche i suoni.
 const PASSO_DECODIFICA = 40;
 const PASSI_DECODIFICA = 40;
 const PAUSA_RIGHE = 2000;
 const DURATA_ENTRATA = 1300;
-const SEGNI_DECODIFICA = '0123456789ABCDEF#%&*+=/';
+// I segni della cifra, larghi e stretti: a ogni lettera va un segno non più largo di lei, così la riga non si allunga.
+const SEGNI_DECODIFICA = '0123456789ABCDEF#%&*+=/|:;!-';
+const TOLLERANZA_SEGNI = 0.02;
 const INTRO = new WeakMap();
+const LARGHEZZE = new Map();
 
 function portaGiaAperta() {
   try { return sessionStorage.getItem(CHIAVE_PORTA) === 'aperta'; } catch (e) { return false; }
@@ -273,21 +280,49 @@ function preparaPorta(porta = document.getElementById('porta')) {
   dietroLaPorta(true);
   porta.querySelector('.porta-apri').addEventListener('click', () => apriPorta(porta));
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) mostraPorta(porta);
-  else avviaIntro(porta);
+  else attendiBussata(porta);
 }
 
-// Una riga si decodifica da sinistra a destra: le lettere non ancora lette cambiano a ogni passo, gli spazi restano.
-// Il prefisso è quello che sta già scritto davanti: la prima riga, quando si legge la seconda.
+// Le larghezze dei segni e delle lettere nel carattere dell'elemento, misurate una volta su una tela.
+function larghezze(el) {
+  const stile = getComputedStyle(el);
+  const carattere = stile.fontStyle + ' ' + stile.fontWeight + ' ' + stile.fontSize + ' ' + stile.fontFamily;
+  if (!LARGHEZZE.has(carattere)) {
+    const tela = document.createElement('canvas').getContext('2d');
+    tela.font = carattere;
+    const misure = new Map();
+    const misuraDi = c => {
+      if (!misure.has(c)) misure.set(c, tela.measureText(c).width);
+      return misure.get(c);
+    };
+    LARGHEZZE.set(carattere, { misuraDi, em: parseFloat(stile.fontSize) || 16 });
+  }
+  return LARGHEZZE.get(carattere);
+}
+
+// Il segno che copre una lettera: a caso fra quelli non più larghi di lei, a meno della tolleranza; se nessuno ci sta,
+// il più stretto. Così la riga cifrata non è mai più larga di quella letta, e non va a capo dove quella non va.
+function segnoPer(lettera, metro) {
+  const limite = metro.misuraDi(lettera) + TOLLERANZA_SEGNI * metro.em;
+  const candidati = [...SEGNI_DECODIFICA].filter(segno => metro.misuraDi(segno) <= limite);
+  if (candidati.length) return candidati[Math.floor(Math.random() * candidati.length)];
+  return [...SEGNI_DECODIFICA].reduce((a, b) => (metro.misuraDi(b) < metro.misuraDi(a) ? b : a));
+}
+
+// Una riga si decodifica da sinistra a destra: le lettere non ancora lette cambiano a ogni passo, gli spazi restano,
+// e ogni passo fa un tick. Il prefisso è quello che sta già scritto davanti: la prima riga, quando si legge la seconda.
 function decodifica(el, testo, fatto, prefisso = '') {
   let passo = 0;
+  const metro = larghezze(el);
   const timer = setInterval(() => {
     passo++;
     const lette = Math.floor(testo.length * passo / PASSI_DECODIFICA);
     let riga = testo.slice(0, lette);
     for (let i = lette; i < testo.length; i++) {
-      riga += testo[i] === ' ' ? ' ' : SEGNI_DECODIFICA[Math.floor(Math.random() * SEGNI_DECODIFICA.length)];
+      riga += testo[i] === ' ' ? ' ' : segnoPer(testo[i], metro);
     }
     el.textContent = prefisso + riga;
+    suoni.suona(tick);
     if (passo >= PASSI_DECODIFICA) {
       clearInterval(timer);
       fatto();
@@ -296,8 +331,28 @@ function decodifica(el, testo, fatto, prefisso = '') {
   return timer;
 }
 
-// L'intro: su nero, la prima riga che si decodifica, una pausa, la seconda riga sotto di lei, poi la porta che entra;
-// un clic la salta.
+// Prima dell'intro la porta aspetta un tocco: su nero si decodifica «premi per entrare», e il tocco, un clic o un tasto
+// sul bottone, sblocca i suoni e fa partire l'intro. Senza quel gesto i browser non farebbero suonare niente.
+function attendiBussata(porta) {
+  const bussa = porta.querySelector('.porta-bussa');
+  const stato = { timer: null, fine: null, salta: null };
+  INTRO.set(porta, stato);
+  porta.classList.add('porta-in-attesa');
+  stato.timer = decodifica(bussa.querySelector('.porta-bussa-testo'), TESTI.portaBussa, () => {});
+  stato.salta = () => {
+    porta.removeEventListener('click', stato.salta);
+    clearInterval(stato.timer);
+    INTRO.delete(porta);
+    porta.classList.remove('porta-in-attesa');
+    sbloccaSuoni();
+    avviaIntro(porta);
+  };
+  porta.addEventListener('click', stato.salta);
+  bussa.focus();
+}
+
+// L'intro: su nero, la prima riga che si decodifica, una pausa, la seconda riga sotto di lei, poi la porta che entra,
+// col suo suono; un clic la salta.
 function avviaIntro(porta) {
   const stato = { salta: () => mostraPorta(porta), timer: null, fine: null };
   INTRO.set(porta, stato);
@@ -309,6 +364,7 @@ function avviaIntro(porta) {
     stato.fine = setTimeout(() => {
       stato.timer = decodifica(el, seconda, () => {
         porta.classList.add('porta-entra');
+        suoni.suona(entrata);
         stato.fine = setTimeout(() => mostraPorta(porta), DURATA_ENTRATA);
       }, prima + '\n');
     }, PAUSA_RIGHE);
@@ -324,7 +380,7 @@ function mostraPorta(porta) {
     porta.removeEventListener('click', stato.salta);
     INTRO.delete(porta);
   }
-  porta.classList.remove('porta-intro', 'porta-entra');
+  porta.classList.remove('porta-in-attesa', 'porta-intro', 'porta-entra');
   porta.classList.add('porta-pronta');
   porta.querySelector('.porta-decodifica').textContent = TESTI.portaBenvenuto;
   porta.querySelector('.porta-apri').focus();
@@ -341,7 +397,179 @@ function apriPorta(porta = document.getElementById('porta')) {
     return;
   }
   porta.classList.add('porta-in-apertura');
+  suoni.suona(apertura);
   setTimeout(() => porta.remove(), DURATA_PORTA);
+}
+
+// I suoni: sintetizzati con Web Audio, senza file. Il contesto nasce al primo gesto dell'utente, perché prima i browser
+// non fanno suonare niente; ogni suono è una fabbrica che prende contesto, uscita e istante, così si prova anche fuori
+// linea. Si spengono e si accendono dai bottoni «♪», e la scelta resta per la scheda del browser.
+const CHIAVE_SUONI = 'lilith-suoni';
+const VOLUME_SUONI = 0.35;
+const PAUSA_BLIP = 70;
+const suoni = {
+  contesto: null,
+  uscita: null,
+  ultimoBlip: 0,
+  pronto() { return Boolean(this.contesto) && this.contesto.state === 'running' && suoniAccesi(); },
+  suona(fabbrica) {
+    if (!this.pronto()) return;
+    fabbrica(this.contesto, this.uscita, this.contesto.currentTime);
+  }
+};
+
+function suoniAccesi() {
+  try { return sessionStorage.getItem(CHIAVE_SUONI) !== 'spenti'; } catch (e) { return true; }
+}
+
+function impostaSuoni(accesi) {
+  try { sessionStorage.setItem(CHIAVE_SUONI, accesi ? 'accesi' : 'spenti'); } catch (e) { /* niente memoria */ }
+  const etichetta = accesi ? TESTI.suoniAccesi : TESTI.suoniSpenti;
+  document.querySelectorAll('[data-suoni]').forEach(bottone => {
+    bottone.setAttribute('aria-pressed', String(accesi));
+    bottone.title = etichetta;
+    if (bottone.dataset.suoni === 'icona') {
+      bottone.setAttribute('aria-label', etichetta);
+      bottone.textContent = TESTI.suoniIcona;
+    } else {
+      bottone.textContent = etichetta;
+    }
+  });
+}
+
+// Al primo gesto: il contesto, se il browser ce l'ha, e la sua uscita col volume di casa.
+function sbloccaSuoni() {
+  const Contesto = window.AudioContext || window.webkitAudioContext;
+  if (!Contesto) return;
+  if (!suoni.contesto) {
+    suoni.contesto = new Contesto();
+    suoni.uscita = suoni.contesto.createGain();
+    suoni.uscita.gain.value = VOLUME_SUONI;
+    suoni.uscita.connect(suoni.contesto.destination);
+  }
+  if (suoni.contesto.state === 'suspended') suoni.contesto.resume();
+}
+
+function rumore(contesto, durata) {
+  const campioni = Math.ceil(contesto.sampleRate * durata);
+  const buffer = contesto.createBuffer(1, campioni, contesto.sampleRate);
+  const dati = buffer.getChannelData(0);
+  for (let i = 0; i < campioni; i++) dati[i] = Math.random() * 2 - 1;
+  const sorgente = contesto.createBufferSource();
+  sorgente.buffer = buffer;
+  return sorgente;
+}
+
+function inviluppo(contesto, uscita, t, da, a, durata) {
+  const guadagno = contesto.createGain();
+  guadagno.gain.setValueAtTime(da, t);
+  guadagno.gain.exponentialRampToValueAtTime(a, t + durata);
+  guadagno.connect(uscita);
+  return guadagno;
+}
+
+// Il tick della decodifica: un'onda quadra acuta, a caso fra 1,8 e 3,2 kHz, 30 ms.
+function tick(contesto, uscita, t) {
+  const onda = contesto.createOscillator();
+  onda.type = 'square';
+  onda.frequency.value = 1800 + Math.random() * 1400;
+  onda.connect(inviluppo(contesto, uscita, t, 0.08, 0.001, 0.03));
+  onda.start(t);
+  onda.stop(t + 0.03);
+}
+
+// Il blip del passaggio del mouse: una sinusoide che sale da 660 a 990 Hz, 60 ms.
+function blip(contesto, uscita, t) {
+  const onda = contesto.createOscillator();
+  onda.type = 'sine';
+  onda.frequency.setValueAtTime(660, t);
+  onda.frequency.exponentialRampToValueAtTime(990, t + 0.06);
+  onda.connect(inviluppo(contesto, uscita, t, 0.06, 0.001, 0.06));
+  onda.start(t);
+  onda.stop(t + 0.06);
+}
+
+// L'entrata della porta: un soffio di rumore filtrato che sale per 0,9 s, poi il colpo delle ante che si chiudono.
+function entrata(contesto, uscita, t) {
+  const soffio = rumore(contesto, 1);
+  const filtro = contesto.createBiquadFilter();
+  filtro.type = 'lowpass';
+  filtro.frequency.setValueAtTime(200, t);
+  filtro.frequency.exponentialRampToValueAtTime(1600, t + 0.9);
+  const guadagno = contesto.createGain();
+  guadagno.gain.setValueAtTime(0.001, t);
+  guadagno.gain.exponentialRampToValueAtTime(0.3, t + 0.5);
+  guadagno.gain.exponentialRampToValueAtTime(0.001, t + 1);
+  soffio.connect(filtro).connect(guadagno).connect(uscita);
+  soffio.start(t);
+  soffio.stop(t + 1);
+  const colpo = contesto.createOscillator();
+  colpo.type = 'sine';
+  colpo.frequency.setValueAtTime(110, t + 0.9);
+  colpo.frequency.exponentialRampToValueAtTime(45, t + 1.2);
+  colpo.connect(inviluppo(contesto, uscita, t + 0.9, 0.6, 0.001, 0.35));
+  colpo.start(t + 0.9);
+  colpo.stop(t + 1.3);
+  const schiocco = rumore(contesto, 0.05);
+  schiocco.connect(inviluppo(contesto, uscita, t + 0.9, 0.25, 0.001, 0.05));
+  schiocco.start(t + 0.9);
+  schiocco.stop(t + 0.95);
+}
+
+// L'apertura: il cricchetto del volante, dieci scatti in 0,6 s, poi il soffio delle ante che scorrono via.
+function apertura(contesto, uscita, t) {
+  for (let i = 0; i < 10; i++) {
+    const scatto = contesto.createOscillator();
+    scatto.type = 'square';
+    scatto.frequency.value = 380 + i * 25;
+    const quando = t + i * 0.06;
+    scatto.connect(inviluppo(contesto, uscita, quando, 0.12, 0.001, 0.025));
+    scatto.start(quando);
+    scatto.stop(quando + 0.025);
+  }
+  const soffio = rumore(contesto, 1);
+  const filtro = contesto.createBiquadFilter();
+  filtro.type = 'highpass';
+  filtro.frequency.setValueAtTime(300, t + 0.6);
+  filtro.frequency.exponentialRampToValueAtTime(2400, t + 1.5);
+  const guadagno = contesto.createGain();
+  guadagno.gain.setValueAtTime(0.001, t + 0.6);
+  guadagno.gain.exponentialRampToValueAtTime(0.25, t + 0.8);
+  guadagno.gain.exponentialRampToValueAtTime(0.001, t + 1.6);
+  soffio.connect(filtro).connect(guadagno).connect(uscita);
+  soffio.start(t + 0.6);
+  soffio.stop(t + 1.6);
+}
+
+// Il passaggio del mouse, o del fuoco, su un bersaglio: un blip, uno per bersaglio, non più di uno ogni 70 ms.
+const BERSAGLI_BLIP = '.scheda, .menu-voce, .menu-apri, .scarica, .feedback, .trailer-copertina, .trailer-apri, .porta-apri, .porta-bussa, .suoni';
+let ultimoBersaglio = null;
+
+function passaggio(evento) {
+  const bersaglio = evento.target.closest(BERSAGLI_BLIP);
+  const nuovo = bersaglio && bersaglio !== ultimoBersaglio;
+  ultimoBersaglio = bersaglio;
+  if (!nuovo) return;
+  const adesso = performance.now();
+  if (adesso - suoni.ultimoBlip < PAUSA_BLIP) return;
+  suoni.ultimoBlip = adesso;
+  suoni.suona(blip);
+}
+
+// I bottoni «♪» accendono e spengono; il clic su quello della porta non vale come tocco. Ogni gesto sblocca il contesto.
+function preparaSuoni() {
+  impostaSuoni(suoniAccesi());
+  document.querySelectorAll('[data-suoni]').forEach(bottone => {
+    bottone.addEventListener('click', evento => {
+      evento.stopPropagation();
+      sbloccaSuoni();
+      impostaSuoni(!suoniAccesi());
+    });
+  });
+  document.addEventListener('pointerdown', sbloccaSuoni, { capture: true });
+  document.addEventListener('keydown', sbloccaSuoni, { capture: true });
+  document.addEventListener('mouseover', passaggio);
+  document.addEventListener('focusin', passaggio);
 }
 
 function scriviTesti() {
@@ -383,4 +611,5 @@ disegnaSchede(PROGETTI);
 disegnaMenu(PROGETTI);
 preparaMenu();
 preparaPorta();
+preparaSuoni();
 avviaContatore();

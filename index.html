@@ -21,7 +21,9 @@
     <div class="porta-volante" aria-hidden="true"></div>
     <p class="porta-sigla" data-testo="portaSigla"></p>
     <p class="porta-benvenuto"><span class="solo-lettori" data-testo="portaBenvenuto"></span><span class="porta-decodifica" aria-hidden="true"></span></p>
+    <button class="porta-bussa" id="porta-bussa" type="button"><span class="solo-lettori" data-testo="portaBussa"></span><span class="porta-bussa-testo" aria-hidden="true"></span></button>
     <button class="porta-apri" id="porta-apri" type="button" data-testo="portaApri"></button>
+    <button class="suoni porta-suoni" type="button" data-suoni="testo" aria-pressed="true"></button>
   </div>
 </div>
 
@@ -46,10 +48,13 @@
 <nav class="barra" aria-label="Progetti">
   <div class="barra-dentro">
     <span class="barra-marchio" data-testo="barraMarchio"></span>
-    <details class="menu" id="menu" data-parte="menu">
-      <summary class="menu-apri" data-testo="menuApri"></summary>
-      <ul class="menu-elenco" id="menu-elenco"></ul>
-    </details>
+    <div class="barra-destra">
+      <details class="menu" id="menu" data-parte="menu">
+        <summary class="menu-apri" data-testo="menuApri"></summary>
+        <ul class="menu-elenco" id="menu-elenco"></ul>
+      </details>
+      <button class="suoni barra-suoni" type="button" data-suoni="icona" aria-pressed="true"></button>
+    </div>
   </div>
 </nav>
 

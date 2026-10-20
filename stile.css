@@ -128,6 +128,41 @@ a:focus-visible { outline: 2px solid var(--accento); outline-offset: 3px; }
 .porta-apri:hover { background: rgba(255, 109, 179, 0.22); }
 .porta-apri:focus-visible { outline: 2px solid var(--accento); outline-offset: 4px; }
 
+/* Il tocco prima dell'intro: una riga che si decodifica, col cursore che batte; si vede solo in attesa */
+.porta-bussa {
+  display: none;
+  margin: 0;
+  padding: 10px 16px;
+  font: 600 14px/1 var(--mono);
+  letter-spacing: 0.18em;
+  color: var(--accento);
+  cursor: pointer;
+  border: 0;
+  background: transparent;
+}
+
+.porta-bussa-testo::before { content: '› '; color: var(--magenta); }
+.porta-bussa-testo::after { content: '_'; animation: batte 1s steps(2, start) infinite; }
+.porta-bussa:focus-visible { outline: 1px dashed var(--magenta); outline-offset: 6px; }
+
+@keyframes batte { to { visibility: hidden; } }
+
+/* I bottoni dei suoni: nella porta col testo, nella barra la sola nota; spenti, in rosso e barrati */
+.suoni {
+  font: 600 12px/1 var(--mono);
+  letter-spacing: 0.1em;
+  color: var(--testo-tenue);
+  cursor: pointer;
+  border: 1px solid var(--scheda-bordo);
+  background: transparent;
+}
+
+.suoni[aria-pressed="false"] { color: var(--rosso); text-decoration: line-through; }
+.suoni:hover { border-color: var(--magenta); }
+.suoni:focus-visible { outline: 2px solid var(--accento); outline-offset: 3px; }
+.porta-suoni { margin-top: 10px; padding: 6px 10px; }
+.barra-suoni { flex: none; width: 34px; height: 34px; padding: 0; font-size: 15px; }
+
 /* Il testo per chi legge con uno screen reader: la frase vera, fuori dallo schermo; la decodifica è solo da vedere */
 .solo-lettori {
   position: absolute;
@@ -138,20 +173,31 @@ a:focus-visible { outline: 2px solid var(--accento); outline-offset: 3px; }
   white-space: nowrap;
 }
 
-/* L'intro: su nero, prima la frase che si decodifica, poi entrano le ante, la targa, il volante, la sigla e il bottone */
+/* L'attesa del tocco e l'intro: su nero, senza ante né targa; in attesa la riga del tocco al posto del benvenuto, poi la
+   frase che si decodifica, poi entrano le ante, la targa, il volante, la sigla e i bottoni */
+.porta-in-attesa .porta-anta-sinistra,
 .porta-intro .porta-anta-sinistra { transform: translateX(-100%); }
+.porta-in-attesa .porta-anta-destra,
 .porta-intro .porta-anta-destra { transform: translateX(100%); }
+.porta-in-attesa .porta-centro,
 .porta-intro .porta-centro { background: transparent; border-color: transparent; box-shadow: none; }
+.porta-in-attesa .porta-volante,
+.porta-in-attesa .porta-sigla,
+.porta-in-attesa .porta-apri,
 .porta-intro .porta-volante,
 .porta-intro .porta-sigla,
-.porta-intro .porta-apri { opacity: 0; visibility: hidden; }
+.porta-intro .porta-apri,
+.porta-intro .porta-suoni { opacity: 0; visibility: hidden; }
+.porta-in-attesa .porta-benvenuto { display: none; }
+.porta-in-attesa .porta-bussa { display: inline-block; }
 
 .porta-entra .porta-anta-sinistra { animation: anta-entra-sinistra 0.9s cubic-bezier(0.7, 0, 0.3, 1) forwards; }
 .porta-entra .porta-anta-destra { animation: anta-entra-destra 0.9s cubic-bezier(0.7, 0, 0.3, 1) forwards; }
 .porta-entra .porta-centro { animation: targa-entra 0.5s ease 0.6s forwards; }
 .porta-entra .porta-volante { animation: volante-entra 0.7s ease-out 0.5s forwards; }
 .porta-entra .porta-sigla,
-.porta-entra .porta-apri { animation: appari 0.4s ease 0.9s forwards; }
+.porta-entra .porta-apri,
+.porta-entra .porta-suoni { animation: appari 0.4s ease 0.9s forwards; }
 
 @keyframes anta-entra-sinistra { from { transform: translateX(-100%); } to { transform: translateX(0); } }
 @keyframes anta-entra-destra { from { transform: translateX(100%); } to { transform: translateX(0); } }
@@ -274,8 +320,11 @@ a:focus-visible { outline: 2px solid var(--accento); outline-offset: 3px; }
   color: var(--testo-tenue);
 }
 
+/* A destra nella barra il menù e il bottone dei suoni */
+.barra-destra { display: flex; align-items: center; gap: 10px; flex: 0 1 364px; min-width: 0; }
+
 /* Il menù: il bottone largo come la tendina, che sta attaccata sotto, con gli stessi bordi */
-.menu { position: relative; flex: 0 1 320px; min-width: 0; }
+.menu { position: relative; flex: 1 1 auto; min-width: 0; }
 
 .menu-apri {
   display: flex;
