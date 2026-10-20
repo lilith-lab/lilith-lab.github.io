@@ -20,10 +20,17 @@
   <div class="porta-centro">
     <div class="porta-volante" aria-hidden="true"></div>
     <p class="porta-sigla" data-testo="portaSigla"></p>
-    <p class="porta-benvenuto"><span class="solo-lettori" data-testo="portaBenvenuto"></span><span class="porta-decodifica" aria-hidden="true"></span></p>
+    <p class="porta-benvenuto"><span class="solo-lettori porta-lettori"></span><span class="porta-decodifica" aria-hidden="true"></span></p>
+    <form class="porta-nome" autocomplete="off">
+      <label class="porta-nome-riga"><span class="solo-lettori" data-testo="portaNomeEtichetta"></span><span class="porta-nome-prompt" aria-hidden="true">›</span><input class="porta-nome-campo" type="text" name="nome" maxlength="24" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="done"></label>
+      <p class="porta-nome-aiuto" data-testo="portaNomeAiuto"></p>
+    </form>
     <button class="porta-bussa" id="porta-bussa" type="button"><span class="solo-lettori" data-testo="portaBussa"></span><span class="porta-bussa-testo" aria-hidden="true"></span></button>
     <button class="porta-apri" id="porta-apri" type="button" data-testo="portaApri"></button>
-    <button class="suoni porta-suoni" type="button" data-suoni="testo" aria-pressed="true"></button>
+    <div class="porta-comandi">
+      <button class="suoni porta-suoni" type="button" data-suoni="testo" aria-pressed="true"></button>
+      <button class="porta-rewind" type="button" data-testo="portaRewind"></button>
+    </div>
   </div>
 </div>
 

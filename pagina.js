@@ -24,8 +24,15 @@ const TESTI = {
   criptatoTesto: 'Mi spiace, non hai accesso a questo materiale.',
   criptatoInvito: '› Hai l\'invito? Clicca ed entra con quell\'account Google.',
   portaSigla: '▓▓ ACCESSO RISERVATO ▓▓',
-  // Il benvenuto in due righe, con l'a capo nel testo: nell'intro la seconda arriva dopo la prima.
-  portaBenvenuto: 'benvenuto straniero.\no dovrei chiamarti: l\'eletto',
+  // Il benvenuto in due righe, con l'a capo nel testo: nell'intro la seconda arriva dopo la prima, e finisce col nome
+  // scritto da chi entra, o con «l'eletto» se non ne scrive nessuno.
+  portaBenvenuto: 'benvenuto straniero.\no dovrei chiamarti: ',
+  portaEletto: 'l\'eletto',
+  portaNomeEtichetta: 'Il tuo nome',
+  portaNomeAiuto: 'scrivi il tuo nome e premi invio',
+  portaBentornato: 'bentornato ',
+  portaRewind: '◂◂ rewind',
+  portaRewindTitolo: 'Dimentica il nome e ricomincia dall\'inizio',
   portaBussa: 'premi per entrare',
   portaApri: 'Apri la porta',
   suoniAccesi: '♪ suoni accesi',
@@ -115,18 +122,46 @@ function provaAccesso(copertina) {
   anteprima.src = 'https://drive.google.com/thumbnail?id=' + copertina.dataset.id + '&sz=w640';
 }
 
+// Sugli schermi a tocco Drive mette il suo lettore da telefono, che in un riquadro stretto esce dai bordi e perde i
+// controlli: lì la cornice di Drive si disegna larga 1280 px e si rimpicciolisce fino al riquadro, e Drive ci mette il
+// lettore intero, coi controlli al loro posto.
+const LARGHEZZA_DRIVE = 1280;
+const SCHERMO_A_TOCCO = '(pointer: coarse)';
+
 function apriTrailer(copertina) {
   chiudiTrailer();
-  const cornice = crea('iframe', 'trailer-riquadro');
+  const cornice = crea('iframe');
   cornice.src = 'https://drive.google.com/file/d/' + copertina.dataset.id + '/preview';
   cornice.title = copertina.title;
   cornice.setAttribute('allowfullscreen', '');
-  copertina.replaceWith(cornice);
-  trailerAperto = { cornice, copertina };
+  const ridotto = matchMedia(SCHERMO_A_TOCCO).matches;
+  const riquadro = ridotto ? crea('div', 'trailer-riquadro trailer-ridotto') : cornice;
+  if (ridotto) riquadro.append(cornice);
+  else cornice.className = 'trailer-riquadro';
+  copertina.replaceWith(riquadro);
+  trailerAperto = { riquadro, copertina, osservatore: null };
+  if (!ridotto) return;
+  adattaTrailer(riquadro);
+  // Il riquadro cambia larghezza quando il telefono si gira: la scala lo segue.
+  if (window.ResizeObserver) {
+    trailerAperto.osservatore = new ResizeObserver(() => adattaTrailer(riquadro));
+    trailerAperto.osservatore.observe(riquadro);
+  }
+}
+
+// La cornice larga LARGHEZZA_DRIVE, alta in sedici noni, rimpicciolita fino alla larghezza del riquadro.
+function adattaTrailer(riquadro) {
+  const cornice = riquadro.querySelector('iframe');
+  cornice.style.width = LARGHEZZA_DRIVE + 'px';
+  cornice.style.height = Math.round(LARGHEZZA_DRIVE * 9 / 16) + 'px';
+  cornice.style.transform = 'scale(' + riquadro.clientWidth / LARGHEZZA_DRIVE + ')';
 }
 
 function chiudiTrailer() {
-  if (trailerAperto) trailerAperto.cornice.replaceWith(trailerAperto.copertina);
+  if (trailerAperto) {
+    if (trailerAperto.osservatore) trailerAperto.osservatore.disconnect();
+    trailerAperto.riquadro.replaceWith(trailerAperto.copertina);
+  }
   trailerAperto = null;
 }
 
@@ -244,6 +279,9 @@ function preparaMenu(menu = document.getElementById('menu')) {
 // La porta: si apre una volta per scheda del browser. Finché è chiusa, quello che c'è dietro non si raggiunge col Tab.
 const CHIAVE_PORTA = 'lilith-porta';
 const DURATA_PORTA = 1800;
+// Il nome di chi entra resta nel suo browser e non va da nessun'altra parte: alla visita dopo, la porta lo saluta.
+const CHIAVE_NOME = 'lilith-nome';
+const LUNGHEZZA_NOME = 24;
 // L'intro: ogni riga si decodifica in 40 passi da 40 ms, la seconda 2 s dopo la prima; poi la porta entra in 1,3 s.
 // Un clic la salta. Parte da un tocco, che sblocca anche i suoni.
 const PASSO_DECODIFICA = 40;
@@ -254,6 +292,7 @@ const DURATA_ENTRATA = 1300;
 const SEGNI_DECODIFICA = '0123456789ABCDEF#%&*+=/|:;!-';
 const TOLLERANZA_SEGNI = 0.02;
 const INTRO = new WeakMap();
+const FRASI = new WeakMap();
 const LARGHEZZE = new Map();
 
 function portaGiaAperta() {
@@ -265,11 +304,47 @@ function ricordaPorta() {
   try { sessionStorage.setItem(CHIAVE_PORTA, 'aperta'); } catch (e) { /* niente memoria, la porta tornerà */ }
 }
 
+function leggiNome() {
+  try { return pulisciNome(localStorage.getItem(CHIAVE_NOME) || ''); } catch (e) { return ''; }
+}
+
+// Senza memoria del browser il nome non resta: alla visita dopo la porta lo chiede di nuovo, niente di peggio.
+function salvaNome(nome) {
+  try { localStorage.setItem(CHIAVE_NOME, nome); } catch (e) { /* niente memoria */ }
+}
+
+function dimenticaNome() {
+  try { localStorage.removeItem(CHIAVE_NOME); } catch (e) { /* niente memoria */ }
+}
+
+// Il nome come si mostra: senza caratteri di controllo, con gli spazi ridotti a uno, al massimo LUNGHEZZA_NOME segni.
+function pulisciNome(testo) {
+  const pulito = String(testo).replace(/[\u0000-\u001f\u007f]/g, '').replace(/\s+/g, ' ').trim();
+  return [...pulito].slice(0, LUNGHEZZA_NOME).join('').trim();
+}
+
+// La frase del benvenuto finita: col nome, o con «l'eletto» quando il nome non c'è.
+function fraseBenvenuto(nome) {
+  return TESTI.portaBenvenuto + (nome || TESTI.portaEletto);
+}
+
+// La frase che la porta dice quando è pronta, anche a chi legge con uno screen reader.
+function scriviFrase(porta, frase) {
+  FRASI.set(porta, frase);
+  porta.querySelector('.porta-lettori').textContent = frase;
+}
+
+function fraseDi(porta) {
+  return FRASI.get(porta) || fraseBenvenuto('');
+}
+
 function dietroLaPorta(chiusa) {
   document.querySelectorAll('body > :not(.porta)').forEach(el => { el.inert = chiusa; });
   document.documentElement.classList.toggle('porta-chiusa', chiusa);
 }
 
+// Senza nome la porta aspetta il tocco e fa l'intro, che finisce chiedendolo; col movimento ridotto lo chiede subito.
+// Con un nome già scritto, in una scheda nuova, saluta.
 function preparaPorta(porta = document.getElementById('porta')) {
   if (!porta) return;
   if (portaGiaAperta()) {
@@ -277,9 +352,39 @@ function preparaPorta(porta = document.getElementById('porta')) {
     return;
   }
   dietroLaPorta(true);
-  porta.querySelector('.porta-apri').addEventListener('click', () => apriPorta(porta));
-  if (matchMedia('(prefers-reduced-motion: reduce)').matches) mostraPorta(porta);
+  preparaComandiPorta(porta);
+  scriviFrase(porta, fraseBenvenuto(''));
+  const nome = leggiNome();
+  if (nome) salutaDiNuovo(porta, nome);
+  else if (matchMedia('(prefers-reduced-motion: reduce)').matches) chiediNome(porta);
   else attendiBussata(porta);
+}
+
+// I comandi della porta: il bottone che la apre, il campo del nome, con un tick a ogni tasto, e il rewind.
+function preparaComandiPorta(porta) {
+  const campo = porta.querySelector('.porta-nome-campo');
+  porta.querySelector('.porta-apri').addEventListener('click', () => apriPorta(porta));
+  porta.querySelector('.porta-nome').addEventListener('submit', evento => {
+    evento.preventDefault();
+    rispondi(porta, campo.value);
+  });
+  campo.addEventListener('input', () => suoni.suona(tick));
+  const rewind = porta.querySelector('.porta-rewind');
+  rewind.title = TESTI.portaRewindTitolo;
+  rewind.addEventListener('click', evento => {
+    evento.stopPropagation();
+    riavvolgi(porta);
+  });
+}
+
+// Ferma l'intro in corso, se c'è: i tempi e il clic che la salta.
+function fermaIntro(porta) {
+  const stato = INTRO.get(porta);
+  if (!stato) return;
+  clearInterval(stato.timer);
+  clearTimeout(stato.fine);
+  if (stato.salta) porta.removeEventListener('click', stato.salta);
+  INTRO.delete(porta);
 }
 
 // Le larghezze dei segni e delle lettere nel carattere dell'elemento, misurate una volta su una tela.
@@ -310,15 +415,17 @@ function segnoPer(lettera, metro) {
 
 // Una riga si decodifica da sinistra a destra: le lettere non ancora lette cambiano a ogni passo, gli spazi restano,
 // e ogni passo fa un tick. Il prefisso è quello che sta già scritto davanti: la prima riga, quando si legge la seconda.
+// Si conta per segni, non per unità del testo, perché un nome con un'emoji non si spezzi a metà.
 function decodifica(el, testo, fatto, prefisso = '') {
   let passo = 0;
   const metro = larghezze(el);
+  const lettere = [...testo];
   const timer = setInterval(() => {
     passo++;
-    const lette = Math.floor(testo.length * passo / PASSI_DECODIFICA);
-    let riga = testo.slice(0, lette);
-    for (let i = lette; i < testo.length; i++) {
-      riga += testo[i] === ' ' ? ' ' : segnoPer(testo[i], metro);
+    const lette = Math.floor(lettere.length * passo / PASSI_DECODIFICA);
+    let riga = lettere.slice(0, lette).join('');
+    for (let i = lette; i < lettere.length; i++) {
+      riga += lettere[i] === ' ' ? ' ' : segnoPer(lettere[i], metro);
     }
     el.textContent = prefisso + riga;
     suoni.suona(tick);
@@ -350,10 +457,10 @@ function attendiBussata(porta) {
   bussa.focus();
 }
 
-// L'intro: su nero, la prima riga che si decodifica, una pausa, la seconda riga sotto di lei, poi la porta che entra,
-// col suo suono; un clic la salta.
+// L'intro: su nero, la prima riga che si decodifica, una pausa, la seconda riga sotto di lei fino ai due punti, poi il
+// campo del nome; un clic la salta fino al campo.
 function avviaIntro(porta) {
-  const stato = { salta: () => mostraPorta(porta), timer: null, fine: null };
+  const stato = { salta: () => chiediNome(porta), timer: null, fine: null };
   INTRO.set(porta, stato);
   porta.classList.add('porta-intro');
   porta.addEventListener('click', stato.salta);
@@ -361,28 +468,86 @@ function avviaIntro(porta) {
   const [prima, seconda] = TESTI.portaBenvenuto.split('\n');
   stato.timer = decodifica(el, prima, () => {
     stato.fine = setTimeout(() => {
-      stato.timer = decodifica(el, seconda, () => {
-        porta.classList.add('porta-entra');
-        suoni.suona(entrata);
-        stato.fine = setTimeout(() => mostraPorta(porta), DURATA_ENTRATA);
-      }, prima + '\n');
+      stato.timer = decodifica(el, seconda, () => chiediNome(porta), prima + '\n');
     }, PAUSA_RIGHE);
   });
 }
 
-// La porta da ferma: tutto in vista, la frase per intero, il fuoco sul bottone. Chiude l'intro, se sta andando.
-function mostraPorta(porta) {
-  const stato = INTRO.get(porta);
-  if (stato) {
-    clearInterval(stato.timer);
-    clearTimeout(stato.fine);
-    porta.removeEventListener('click', stato.salta);
-    INTRO.delete(porta);
-  }
-  porta.classList.remove('porta-in-attesa', 'porta-intro', 'porta-entra');
-  porta.classList.add('porta-pronta');
+// Il nome si chiede in un campo stile terminale, sotto la domanda: un clic sulla porta porta il fuoco nel campo, Invio
+// risponde.
+function chiediNome(porta) {
+  fermaIntro(porta);
+  porta.classList.remove('porta-in-attesa', 'porta-intro', 'porta-pronta', 'porta-bentornato');
+  porta.classList.add('porta-chiede');
   porta.querySelector('.porta-decodifica').textContent = TESTI.portaBenvenuto;
+  porta.querySelector('.porta-lettori').textContent = TESTI.portaBenvenuto;
+  const campo = porta.querySelector('.porta-nome-campo');
+  const stato = { salta: () => campo.focus(), timer: null, fine: null };
+  INTRO.set(porta, stato);
+  porta.addEventListener('click', stato.salta);
+  campo.value = '';
+  campo.focus();
+}
+
+// La risposta: il nome pulito si ricorda, se c'è, e si decodifica dopo i due punti; senza nome, «l'eletto», e non si
+// ricorda niente. Poi entrano le ante, col loro suono; un clic salta alla porta pronta.
+function rispondi(porta, testo) {
+  if (!porta.classList.contains('porta-chiede')) return;
+  fermaIntro(porta);
+  const nome = pulisciNome(testo);
+  if (nome) salvaNome(nome);
+  scriviFrase(porta, fraseBenvenuto(nome));
+  porta.classList.remove('porta-chiede');
+  porta.querySelector('.porta-nome-campo').blur();
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    mostraPorta(porta);
+    return;
+  }
+  const stato = { salta: () => mostraPorta(porta), timer: null, fine: null };
+  INTRO.set(porta, stato);
+  porta.classList.add('porta-intro');
+  porta.addEventListener('click', stato.salta);
+  const el = porta.querySelector('.porta-decodifica');
+  stato.timer = decodifica(el, nome || TESTI.portaEletto, () => {
+    porta.classList.add('porta-entra');
+    suoni.suona(entrata);
+    stato.fine = setTimeout(() => mostraPorta(porta), DURATA_ENTRATA);
+  }, TESTI.portaBenvenuto);
+}
+
+// La porta da ferma: tutto in vista, la sua frase per intero, il fuoco sul bottone. Chiude l'intro, se sta andando.
+function mostraPorta(porta) {
+  fermaIntro(porta);
+  porta.classList.remove('porta-in-attesa', 'porta-intro', 'porta-entra', 'porta-chiede');
+  porta.classList.add('porta-pronta');
+  porta.querySelector('.porta-decodifica').textContent = fraseDi(porta);
   porta.querySelector('.porta-apri').focus();
+}
+
+// Alla visita dopo, in una scheda nuova: niente tocco, intro né campo, la porta pronta che saluta per nome, col rewind.
+// La frase si decodifica una volta, muta, perché prima di un gesto i suoni non partono.
+function salutaDiNuovo(porta, nome) {
+  scriviFrase(porta, TESTI.portaBentornato + nome + '.');
+  porta.classList.add('porta-bentornato');
+  mostraPorta(porta);
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const stato = { salta: null, timer: null, fine: null };
+  INTRO.set(porta, stato);
+  stato.timer = decodifica(porta.querySelector('.porta-decodifica'), fraseDi(porta), () => INTRO.delete(porta));
+}
+
+// Il rewind: il nome si dimentica e la porta ricomincia dall'intro, col nastro che torna indietro. Il clic sul rewind è
+// già un gesto, quindi il tocco non serve: i suoni sono sbloccati.
+function riavvolgi(porta) {
+  fermaIntro(porta);
+  dimenticaNome();
+  sbloccaSuoni();
+  suoni.suonaAppena(riavvolgimento);
+  porta.classList.remove('porta-pronta', 'porta-bentornato');
+  scriviFrase(porta, fraseBenvenuto(''));
+  porta.querySelector('.porta-decodifica').textContent = '';
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) chiediNome(porta);
+  else avviaIntro(porta);
 }
 
 // Col movimento ridotto la porta sparisce subito; se no le ante si aprono, e alla fine la porta esce dalla pagina.
@@ -396,7 +561,7 @@ function apriPorta(porta = document.getElementById('porta')) {
     return;
   }
   porta.classList.add('porta-in-apertura');
-  suoni.suona(apertura);
+  suoni.suonaAppena(apertura);
   setTimeout(() => porta.remove(), DURATA_PORTA);
 }
 
@@ -414,6 +579,17 @@ const suoni = {
   suona(fabbrica) {
     if (!this.pronto()) return;
     fabbrica(this.contesto, this.uscita, this.contesto.currentTime);
+  },
+  // Il primo gesto può trovare il contesto appena nato e ancora sospeso, come davanti alla porta del bentornato: allora
+  // il suono aspetta che riprenda, e parte se nel frattempo i suoni non sono stati spenti.
+  suonaAppena(fabbrica) {
+    if (this.contesto && this.contesto.state === 'suspended' && suoniAccesi()) {
+      this.contesto.resume().then(() => {
+        if (this.pronto()) fabbrica(this.contesto, this.uscita, this.contesto.currentTime);
+      }, () => {});
+      return;
+    }
+    this.suona(fabbrica);
   }
 };
 
@@ -540,8 +716,19 @@ function apertura(contesto, uscita, t) {
   soffio.stop(t + 1.6);
 }
 
+// Il rewind: un'onda a dente di sega che scende da 1400 a 180 Hz in 0,45 s, il nastro che torna indietro.
+function riavvolgimento(contesto, uscita, t) {
+  const onda = contesto.createOscillator();
+  onda.type = 'sawtooth';
+  onda.frequency.setValueAtTime(1400, t);
+  onda.frequency.exponentialRampToValueAtTime(180, t + 0.45);
+  onda.connect(inviluppo(contesto, uscita, t, 0.07, 0.001, 0.45));
+  onda.start(t);
+  onda.stop(t + 0.45);
+}
+
 // Il passaggio del mouse, o del fuoco, su un bersaglio: un blip, uno per bersaglio, non più di uno ogni 70 ms.
-const BERSAGLI_BLIP = '.scheda, .menu-voce, .menu-apri, .scarica, .feedback, .trailer-copertina, .trailer-apri, .porta-apri, .porta-bussa, .suoni';
+const BERSAGLI_BLIP = '.scheda, .menu-voce, .menu-apri, .scarica, .feedback, .trailer-copertina, .trailer-apri, .porta-apri, .porta-bussa, .porta-rewind, .suoni';
 let ultimoBersaglio = null;
 
 function passaggio(evento) {

@@ -160,7 +160,61 @@ a:focus-visible { outline: 2px solid var(--accento); outline-offset: 3px; }
 .suoni[aria-pressed="false"] { color: var(--rosso); text-decoration: line-through; }
 .suoni:hover { border-color: var(--magenta); }
 .suoni:focus-visible { outline: 2px solid var(--accento); outline-offset: 3px; }
-.porta-suoni { margin-top: 10px; padding: 6px 10px; }
+.porta-suoni { padding: 6px 10px; }
+
+/* Sotto il bottone della porta, in fila: i suoni e il rewind */
+.porta-comandi { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 10px; }
+
+/* Il rewind: solo nella porta del bentornato */
+.porta-rewind {
+  display: none;
+  padding: 6px 10px;
+  font: 600 12px/1 var(--mono);
+  letter-spacing: 0.1em;
+  color: var(--accento);
+  cursor: pointer;
+  border: 1px solid var(--scheda-bordo);
+  background: transparent;
+}
+
+.porta-bentornato .porta-rewind { display: inline-block; }
+.porta-rewind:hover { border-color: var(--magenta); }
+.porta-rewind:focus-visible { outline: 2px solid var(--accento); outline-offset: 3px; }
+
+/* Il campo del nome, stile terminale: il prompt magenta, il testo rosa col cursore; si vede solo quando la porta chiede.
+   A 16 px, perché i telefoni non ingrandiscano la pagina quando il campo prende il fuoco */
+.porta-nome { display: none; width: min(22rem, 100%); margin: 0; }
+.porta-chiede .porta-nome { display: grid; gap: 8px; }
+
+.porta-nome-riga {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  cursor: text;
+  border: 1px solid var(--magenta);
+  background: rgba(194, 24, 122, 0.08);
+  box-shadow: 0 0 24px rgba(255, 46, 120, 0.18);
+}
+
+.porta-nome-riga:focus-within { border-color: var(--accento); }
+.porta-nome-prompt { font: 700 16px/1 var(--mono); color: var(--magenta); }
+
+.porta-nome-campo {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  font: 600 16px/1.4 var(--mono);
+  letter-spacing: 0.08em;
+  color: var(--accento);
+  caret-color: var(--accento);
+  border: 0;
+  outline: none;
+  background: transparent;
+}
+
+.porta-nome-aiuto { margin: 0; font: 11px/1.4 var(--mono); letter-spacing: 0.18em; color: var(--testo-tenue); }
 .barra-suoni { flex: none; width: 34px; height: 34px; padding: 0; font-size: 15px; }
 
 /* Il testo per chi legge con uno screen reader: la frase vera, fuori dallo schermo; la decodifica è solo da vedere */
@@ -173,21 +227,29 @@ a:focus-visible { outline: 2px solid var(--accento); outline-offset: 3px; }
   white-space: nowrap;
 }
 
-/* L'attesa del tocco e l'intro: su nero, senza ante né targa; in attesa la riga del tocco al posto del benvenuto, poi la
-   frase che si decodifica, poi entrano le ante, la targa, il volante, la sigla e i bottoni */
+/* L'attesa del tocco, l'intro e il nome: su nero, senza ante né targa; in attesa la riga del tocco al posto del
+   benvenuto, poi la frase che si decodifica, poi il campo del nome, poi entrano le ante, la targa, il volante, la sigla
+   e i bottoni */
 .porta-in-attesa .porta-anta-sinistra,
-.porta-intro .porta-anta-sinistra { transform: translateX(-100%); }
+.porta-intro .porta-anta-sinistra,
+.porta-chiede .porta-anta-sinistra { transform: translateX(-100%); }
 .porta-in-attesa .porta-anta-destra,
-.porta-intro .porta-anta-destra { transform: translateX(100%); }
+.porta-intro .porta-anta-destra,
+.porta-chiede .porta-anta-destra { transform: translateX(100%); }
 .porta-in-attesa .porta-centro,
-.porta-intro .porta-centro { background: transparent; border-color: transparent; box-shadow: none; }
+.porta-intro .porta-centro,
+.porta-chiede .porta-centro { background: transparent; border-color: transparent; box-shadow: none; }
 .porta-in-attesa .porta-volante,
 .porta-in-attesa .porta-sigla,
 .porta-in-attesa .porta-apri,
 .porta-intro .porta-volante,
 .porta-intro .porta-sigla,
 .porta-intro .porta-apri,
-.porta-intro .porta-suoni { opacity: 0; visibility: hidden; }
+.porta-intro .porta-suoni,
+.porta-chiede .porta-volante,
+.porta-chiede .porta-sigla,
+.porta-chiede .porta-apri,
+.porta-chiede .porta-suoni { opacity: 0; visibility: hidden; }
 .porta-in-attesa .porta-benvenuto { display: none; }
 .porta-in-attesa .porta-bussa { display: inline-block; }
 
@@ -568,6 +630,11 @@ a:focus-visible { outline: 2px solid var(--accento); outline-offset: 3px; }
   border-radius: 3px;
   background: #05020a;
 }
+
+/* Sugli schermi a tocco il riquadro tiene la misura della scheda, e dentro la cornice di Drive, larga 1280 px,
+   rimpicciolita fino a lui */
+.trailer-ridotto { position: relative; overflow: hidden; }
+.trailer-ridotto iframe { position: absolute; top: 0; left: 0; display: block; border: 0; transform-origin: 0 0; }
 
 .trailer-spento {
   display: grid;
