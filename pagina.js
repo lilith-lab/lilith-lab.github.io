@@ -122,10 +122,12 @@ function provaAccesso(copertina) {
   anteprima.src = 'https://drive.google.com/thumbnail?id=' + copertina.dataset.id + '&sz=w640';
 }
 
-// Sugli schermi a tocco Drive mette il suo lettore da telefono, che in un riquadro stretto esce dai bordi e perde i
-// controlli: lì la cornice di Drive si disegna larga 1280 px e si rimpicciolisce fino al riquadro, e Drive ci mette il
-// lettore intero, coi controlli al loro posto.
-const LARGHEZZA_DRIVE = 1280;
+// In una cornice stretta Drive non mette il lettore intero: sugli schermi a tocco quello da telefono, che esce dai
+// bordi e perde i controlli, col mouse una banda nera in cima e il video spostato sotto. La cornice di Drive si disegna
+// larga e si rimpicciolisce fino al riquadro: 1280 px sugli schermi a tocco, 854 col mouse, e Drive ci mette il lettore
+// intero, coi controlli al loro posto.
+const LARGHEZZA_DRIVE_TOCCO = 1280;
+const LARGHEZZA_DRIVE_MOUSE = 854;
 const SCHERMO_A_TOCCO = '(pointer: coarse)';
 
 function apriTrailer(copertina) {
@@ -134,27 +136,26 @@ function apriTrailer(copertina) {
   cornice.src = 'https://drive.google.com/file/d/' + copertina.dataset.id + '/preview';
   cornice.title = copertina.title;
   cornice.setAttribute('allowfullscreen', '');
-  const ridotto = matchMedia(SCHERMO_A_TOCCO).matches;
-  const riquadro = ridotto ? crea('div', 'trailer-riquadro trailer-ridotto') : cornice;
-  if (ridotto) riquadro.append(cornice);
-  else cornice.className = 'trailer-riquadro';
+  const riquadro = crea('div', 'trailer-riquadro trailer-ridotto');
+  riquadro.dataset.larghezza = matchMedia(SCHERMO_A_TOCCO).matches ? LARGHEZZA_DRIVE_TOCCO : LARGHEZZA_DRIVE_MOUSE;
+  riquadro.append(cornice);
   copertina.replaceWith(riquadro);
   trailerAperto = { riquadro, copertina, osservatore: null };
-  if (!ridotto) return;
   adattaTrailer(riquadro);
-  // Il riquadro cambia larghezza quando il telefono si gira: la scala lo segue.
+  // Il riquadro cambia larghezza quando il telefono si gira o la finestra si stringe: la scala lo segue.
   if (window.ResizeObserver) {
     trailerAperto.osservatore = new ResizeObserver(() => adattaTrailer(riquadro));
     trailerAperto.osservatore.observe(riquadro);
   }
 }
 
-// La cornice larga LARGHEZZA_DRIVE, alta in sedici noni, rimpicciolita fino alla larghezza del riquadro.
+// La cornice larga quanto dice il riquadro, alta in sedici noni, rimpicciolita fino alla larghezza del riquadro.
 function adattaTrailer(riquadro) {
+  const larghezza = Number(riquadro.dataset.larghezza);
   const cornice = riquadro.querySelector('iframe');
-  cornice.style.width = LARGHEZZA_DRIVE + 'px';
-  cornice.style.height = Math.round(LARGHEZZA_DRIVE * 9 / 16) + 'px';
-  cornice.style.transform = 'scale(' + riquadro.clientWidth / LARGHEZZA_DRIVE + ')';
+  cornice.style.width = larghezza + 'px';
+  cornice.style.height = Math.round(larghezza * 9 / 16) + 'px';
+  cornice.style.transform = 'scale(' + riquadro.clientWidth / larghezza + ')';
 }
 
 function chiudiTrailer() {

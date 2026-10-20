@@ -631,8 +631,8 @@ a:focus-visible { outline: 2px solid var(--accento); outline-offset: 3px; }
   background: #05020a;
 }
 
-/* Sugli schermi a tocco il riquadro tiene la misura della scheda, e dentro la cornice di Drive, larga 1280 px,
-   rimpicciolita fino a lui */
+/* Il riquadro del trailer aperto tiene la misura della scheda, e dentro la cornice di Drive, larga 1280 px sugli
+   schermi a tocco e 854 col mouse, rimpicciolita fino a lui */
 .trailer-ridotto { position: relative; overflow: hidden; }
 .trailer-ridotto iframe { position: absolute; top: 0; left: 0; display: block; border: 0; transform-origin: 0 0; }
 
