@@ -14,35 +14,168 @@
   --magenta-cupo: #5e0d47;
   --rosso: #ff2e4d;
   --rosso-cupo: #7a0d26;
+  --acciaio: #120b1b;
+  --acciaio-chiaro: #1f1430;
   --mono: ui-monospace, Menlo, Consolas, monospace;
   --sans: system-ui, sans-serif;
   --passo: 2s;
   --larghezza: 1100px;
   --margine: 16px;
+  --barra: 56px;
 }
 
 * { box-sizing: border-box; }
 
-html { background: var(--fondo); }
+html { background: var(--fondo); scroll-behavior: smooth; }
+
+/* Finché la porta è chiusa la pagina dietro non scorre; già aperta in questa scheda, la porta non si mostra */
+html.porta-chiusa { overflow: hidden; }
+html.porta-aperta .porta { display: none; }
 
 body {
   margin: 0;
   background: radial-gradient(ellipse at 50% 0%, #12061d 0%, var(--fondo) 60%) no-repeat, var(--fondo);
   color: var(--testo);
-  font: 16px/1.55 var(--sans);
+  font: 16px/1.6 var(--sans);
 }
 
 a { color: var(--accento); }
 a:focus-visible { outline: 2px solid var(--accento); outline-offset: 3px; }
 
-/* Grana e scanline, ferme: nessun cambio di luce */
+/* La porta: due ante blindate a tutto schermo, il volante al centro e il benvenuto */
+.porta {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: #030106;
+}
+
+.porta-anta {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50%;
+  background:
+    repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.025) 0 1px, transparent 1px 22px),
+    linear-gradient(90deg, var(--acciaio), var(--acciaio-chiaro) 50%, var(--acciaio));
+  box-shadow: inset 0 0 0 14px #0a0611, inset 0 0 0 15px var(--scheda-bordo);
+}
+
+.porta-anta-sinistra { left: 0; border-right: 2px solid var(--magenta); }
+.porta-anta-destra { right: 0; border-left: 2px solid var(--magenta); }
+
+/* La targa al centro copre la giunta fra le ante, perché la riga magenta non tagli il testo */
+.porta-centro {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  justify-items: center;
+  gap: 18px;
+  width: min(36rem, calc(100vw - 2 * var(--margine)));
+  padding: 36px 28px 32px;
+  text-align: center;
+  background: rgba(6, 3, 11, 0.94);
+  border: 1px solid var(--scheda-bordo);
+  box-shadow: 0 0 0 6px rgba(6, 3, 11, 0.6), 0 24px 70px rgba(0, 0, 0, 0.7);
+}
+
+.porta-volante {
+  width: clamp(120px, 20vw, 170px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 2px solid var(--magenta);
+  background:
+    radial-gradient(circle, var(--acciaio) 0 16%, var(--accento) 16% 19%, transparent 19%),
+    conic-gradient(transparent 0 40deg, rgba(194, 24, 122, 0.6) 40deg 50deg, transparent 50deg 130deg,
+      rgba(194, 24, 122, 0.6) 130deg 140deg, transparent 140deg 220deg, rgba(194, 24, 122, 0.6) 220deg 230deg,
+      transparent 230deg 310deg, rgba(194, 24, 122, 0.6) 310deg 320deg, transparent 320deg),
+    var(--acciaio);
+  box-shadow: 0 0 0 10px var(--acciaio), 0 0 0 11px var(--scheda-bordo), 0 0 50px rgba(255, 46, 77, 0.25);
+}
+
+.porta-sigla {
+  margin: 8px 0 0;
+  font: 700 12px/1.4 var(--mono);
+  letter-spacing: 0.3em;
+  color: var(--rosso);
+}
+
+.porta-benvenuto {
+  margin: 0;
+  font: italic 600 clamp(1.4rem, 4.4vw, 2.2rem)/1.3 var(--sans);
+  color: var(--testo);
+  text-shadow: 0 0 18px rgba(255, 46, 120, 0.35);
+}
+
+.porta-apri {
+  margin-top: 6px;
+  padding: 12px 22px;
+  font: 600 14px/1 var(--mono);
+  letter-spacing: 0.12em;
+  color: var(--testo);
+  cursor: pointer;
+  border: 1px solid var(--accento);
+  background: rgba(255, 109, 179, 0.1);
+  transition: background-color 0.2s;
+}
+
+.porta-apri:hover { background: rgba(255, 109, 179, 0.22); }
+.porta-apri:focus-visible { outline: 2px solid var(--accento); outline-offset: 4px; }
+
+/* Il testo per chi legge con uno screen reader: la frase vera, fuori dallo schermo; la decodifica è solo da vedere */
+.solo-lettori {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* L'intro: su nero, prima la frase che si decodifica, poi entrano le ante, la targa, il volante, la sigla e il bottone */
+.porta-intro .porta-anta-sinistra { transform: translateX(-100%); }
+.porta-intro .porta-anta-destra { transform: translateX(100%); }
+.porta-intro .porta-centro { background: transparent; border-color: transparent; box-shadow: none; }
+.porta-intro .porta-volante,
+.porta-intro .porta-sigla,
+.porta-intro .porta-apri { opacity: 0; visibility: hidden; }
+
+.porta-entra .porta-anta-sinistra { animation: anta-entra-sinistra 0.9s cubic-bezier(0.7, 0, 0.3, 1) forwards; }
+.porta-entra .porta-anta-destra { animation: anta-entra-destra 0.9s cubic-bezier(0.7, 0, 0.3, 1) forwards; }
+.porta-entra .porta-centro { animation: targa-entra 0.5s ease 0.6s forwards; }
+.porta-entra .porta-volante { animation: volante-entra 0.7s ease-out 0.5s forwards; }
+.porta-entra .porta-sigla,
+.porta-entra .porta-apri { animation: appari 0.4s ease 0.9s forwards; }
+
+@keyframes anta-entra-sinistra { from { transform: translateX(-100%); } to { transform: translateX(0); } }
+@keyframes anta-entra-destra { from { transform: translateX(100%); } to { transform: translateX(0); } }
+@keyframes targa-entra { to { background: rgba(6, 3, 11, 0.94); border-color: var(--scheda-bordo); box-shadow: 0 0 0 6px rgba(6, 3, 11, 0.6), 0 24px 70px rgba(0, 0, 0, 0.7); } }
+@keyframes volante-entra { from { opacity: 0; visibility: visible; transform: rotate(-180deg) scale(0.7); } to { opacity: 1; visibility: visible; transform: none; } }
+@keyframes appari { from { opacity: 0; visibility: visible; } to { opacity: 1; visibility: visible; } }
+
+/* L'apertura: il volante gira, il benvenuto sfuma, le ante scorrono via, poi la porta svanisce */
+.porta-in-apertura { background: transparent; pointer-events: none; animation: sparisci 0.3s ease 1.4s forwards; }
+.porta-in-apertura .porta-volante { animation: volante 0.6s ease-in forwards; }
+.porta-in-apertura .porta-centro { animation: sparisci 0.4s ease 0.5s forwards; }
+.porta-in-apertura .porta-anta-sinistra { animation: anta-sinistra 0.9s cubic-bezier(0.7, 0, 0.3, 1) 0.6s forwards; }
+.porta-in-apertura .porta-anta-destra { animation: anta-destra 0.9s cubic-bezier(0.7, 0, 0.3, 1) 0.6s forwards; }
+
+@keyframes volante { to { transform: rotate(180deg); } }
+@keyframes sparisci { to { opacity: 0; } }
+@keyframes anta-sinistra { to { transform: translateX(-100%); } }
+@keyframes anta-destra { to { transform: translateX(100%); } }
+
+/* Grana e scanline, ferme: nessun cambio di luce; le righe leggere, perché non sporchino il testo */
 .grana {
   position: fixed;
   inset: 0;
   width: 100%;
   height: 100%;
   z-index: 51;
-  opacity: 0.06;
+  opacity: 0.05;
   pointer-events: none;
 }
 
@@ -51,7 +184,7 @@ a:focus-visible { outline: 2px solid var(--accento); outline-offset: 3px; }
   inset: 0;
   z-index: 50;
   pointer-events: none;
-  background: repeating-linear-gradient(180deg, transparent 0 2px, rgba(0, 0, 0, 0.22) 2px 3px);
+  background: repeating-linear-gradient(180deg, transparent 0 2px, rgba(0, 0, 0, 0.12) 2px 3px);
 }
 
 /* Esadecimali ai margini, solo sugli schermi larghi */
@@ -90,11 +223,13 @@ a:focus-visible { outline: 2px solid var(--accento); outline-offset: 3px; }
 .fascia-dentro {
   max-width: var(--larghezza);
   margin: 0 auto;
-  padding: 12px var(--margine);
+  padding: 10px var(--margine);
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
+  justify-content: center;
   gap: 4px 16px;
+  text-align: center;
 }
 
 .fascia-titolo {
@@ -106,11 +241,91 @@ a:focus-visible { outline: 2px solid var(--accento); outline-offset: 3px; }
 
 .fascia-testo { margin: 0; font-size: 14px; }
 
+/* La barra: il marchio e il menù dei progetti, sempre in vista */
+.barra {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: rgba(6, 3, 11, 0.9);
+  border-bottom: 1px solid var(--scheda-bordo);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+
+.barra-dentro {
+  max-width: var(--larghezza);
+  height: var(--barra);
+  margin: 0 auto;
+  padding: 0 var(--margine);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.barra-marchio {
+  flex: none;
+  white-space: nowrap;
+  font: 600 13px/1 var(--mono);
+  letter-spacing: 0.24em;
+  color: var(--testo-tenue);
+}
+
+/* Il menù: il bottone largo come la tendina, che sta attaccata sotto, con gli stessi bordi */
+.menu { position: relative; flex: 0 1 320px; min-width: 0; }
+
+.menu-apri {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  list-style: none;
+  cursor: pointer;
+  padding: 9px 14px;
+  font: 600 13px/1 var(--mono);
+  letter-spacing: 0.08em;
+  color: var(--testo);
+  border: 1px solid var(--scheda-bordo);
+  background: rgba(194, 24, 122, 0.08);
+}
+
+.menu-apri::-webkit-details-marker { display: none; }
+.menu-apri::after { content: '▾'; color: var(--accento); }
+.menu[open] .menu-apri { border-color: var(--magenta); }
+.menu[open] .menu-apri::after { content: '▴'; }
+.menu-apri:focus-visible { outline: 2px solid var(--accento); outline-offset: 3px; }
+
+.menu-elenco {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  background: var(--scheda);
+  border: 1px solid var(--magenta);
+  border-top: 0;
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.6);
+}
+
+.menu-voce {
+  display: block;
+  padding: 10px 12px;
+  line-height: 1.35;
+  color: var(--testo);
+  text-decoration: none;
+  border-left: 2px solid transparent;
+}
+
+.menu-voce:hover,
+.menu-voce:focus-visible { outline: none; background: rgba(194, 24, 122, 0.14); border-left-color: var(--accento); }
+
 /* Testata: cielo, sole nero, griglia */
 .testata {
   position: relative;
   z-index: 1;
-  height: clamp(300px, 40vw, 440px);
+  height: clamp(240px, 30vw, 360px);
   overflow: hidden;
   border-bottom: 1px solid var(--magenta-cupo);
 }
@@ -126,7 +341,7 @@ a:focus-visible { outline: 2px solid var(--accento); outline-offset: 3px; }
   position: absolute;
   left: 50%;
   top: 70%;
-  width: clamp(150px, 20vw, 230px);
+  width: clamp(130px, 17vw, 200px);
   aspect-ratio: 1;
   border-radius: 50%;
   transform: translate(-50%, -50%);
@@ -208,7 +423,7 @@ a:focus-visible { outline: 2px solid var(--accento); outline-offset: 3px; }
   position: absolute;
   left: 0;
   right: 0;
-  top: 8%;
+  top: 9%;
   z-index: 2;
   padding: 0 var(--margine);
   text-align: center;
@@ -216,7 +431,7 @@ a:focus-visible { outline: 2px solid var(--accento); outline-offset: 3px; }
 
 .marchio {
   margin: 0;
-  font: italic 800 clamp(2.8rem, 10vw, 5.6rem)/1 var(--sans);
+  font: italic 800 clamp(2.6rem, 9vw, 5rem)/1 var(--sans);
   letter-spacing: 0.01em;
   background: linear-gradient(180deg, #ffffff 0%, #d8d2ea 40%, #6a5886 50%, #24142f 53%, #e9b4ff 72%, #ff5fa8 100%);
   -webkit-background-clip: text;
@@ -238,33 +453,38 @@ a:focus-visible { outline: 2px solid var(--accento); outline-offset: 3px; }
   z-index: 1;
   max-width: var(--larghezza);
   margin: 0 auto;
-  padding: 28px var(--margine) 48px;
+  padding: 36px var(--margine) 56px;
 }
 
 .presentazione {
-  max-width: 68ch;
-  margin: 0 0 28px;
+  max-width: 64ch;
+  margin: 0 auto 32px;
+  font-size: 17px;
+  text-align: center;
   color: var(--testo-tenue);
 }
 
 .schede {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
-  gap: 24px;
+  gap: 28px;
 }
 
 .scheda {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  padding: 20px;
+  gap: 16px;
+  padding: 24px;
+  scroll-margin-top: calc(var(--barra) + 20px);
   background: linear-gradient(180deg, var(--scheda-alta), var(--scheda));
   border: 1px solid var(--scheda-bordo);
   border-radius: 4px;
   box-shadow: 0 0 0 1px rgba(194, 24, 122, 0.08), 0 14px 40px rgba(0, 0, 0, 0.55);
   overflow-wrap: anywhere;
 }
+
+.scheda:target { border-color: var(--magenta); }
 
 .scheda-versione {
   margin: 0;
@@ -284,9 +504,9 @@ a:focus-visible { outline: 2px solid var(--accento); outline-offset: 3px; }
 
 .data { font: 12px/1.3 var(--mono); color: var(--testo-tenue); }
 
-.scheda-nome { margin: 0; font-size: 1.45rem; line-height: 1.2; }
+.scheda-nome { margin: 0; font-size: 1.5rem; line-height: 1.2; font-weight: 700; }
 
-.scheda-frase { margin: 0; color: var(--testo); }
+.scheda-frase { margin: 0; color: var(--testo-tenue); }
 
 .trailer-riquadro {
   display: block;
@@ -385,25 +605,37 @@ a:focus-visible { outline: 2px solid var(--accento); outline-offset: 3px; }
 }
 
 .passi { margin: 0; padding-left: 1.5em; }
-.passi li { margin: 4px 0; }
+.passi li { margin: 6px 0; }
 .passi li::marker { font-family: var(--mono); color: var(--accento); }
 
-.scarica {
-  align-self: flex-start;
+/* In fondo alla scheda, i due bottoni: Scarica e il feedback */
+.scheda-azioni {
   margin-top: auto;
+  padding-top: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  border-top: 1px solid var(--scheda-bordo);
+}
+
+.scarica,
+.feedback {
   padding: 10px 18px;
   font: 600 14px/1 var(--mono);
   letter-spacing: 0.08em;
   color: var(--testo);
   text-decoration: none;
-  border: 1px solid var(--rosso);
-  background: rgba(255, 46, 77, 0.12);
   transition: background-color 0.2s;
 }
 
+.scarica { border: 1px solid var(--rosso); background: rgba(255, 46, 77, 0.12); }
 a.scarica:hover { background: rgba(255, 46, 77, 0.24); }
 
-.scarica-spento {
+.feedback { border: 1px solid var(--magenta); background: rgba(194, 24, 122, 0.08); }
+a.feedback:hover { background: rgba(194, 24, 122, 0.2); }
+
+.scarica-spento,
+.feedback-spento {
   color: var(--testo-tenue);
   border: 1px dashed #3d2c4c;
   background: transparent;
@@ -423,7 +655,8 @@ a.scarica:hover { background: rgba(255, 46, 77, 0.24); }
 
 .piede p { margin: 0; }
 
-/* Movimento ridotto: niente si muove */
+/* Movimento ridotto: niente si muove, nemmeno lo scorrimento del menù */
 @media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }

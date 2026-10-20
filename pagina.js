@@ -2,15 +2,19 @@
 const TESTI = {
   marchio: 'lilith lab',
   sottotitolo: 'progetti da provare',
+  barraMarchio: 'lilith lab',
+  menuApri: 'Progetti',
   fasciaTitolo: 'ALPHA · LAVORI IN CORSO',
-  fasciaTesto: 'Questi progetti sono ancora in costruzione: provali come sono, e dimmi cosa funziona e cosa no.',
-  presentazione: 'Per ogni progetto trovi il trailer, le istruzioni e il pacchetto da scaricare. Trailer e download si aprono con l\'account Google con cui hai ricevuto l\'invito.',
+  fasciaTesto: 'Versioni in sviluppo, da provare così come sono: ogni segnalazione aiuta a migliorarle.',
+  presentazione: 'Per ogni progetto trovi il trailer, i primi passi, il pacchetto da scaricare e il modulo per i feedback. Trailer, download e modulo si aprono con l\'account Google a cui è arrivato l\'invito.',
   etichetta: 'alpha · ',
   consegna: 'consegna del ',
   sistemi: 'Sistemi',
   istruzioni: 'Come si usa',
   scarica: 'Scarica',
   scaricaSpento: 'Scarica · in arrivo',
+  feedback: 'Invia un feedback',
+  feedbackSpento: 'Feedback · in arrivo',
   trailerSpento: 'trailer in arrivo',
   trailerApri: 'Apri il trailer su Drive',
   trailerTitolo: 'Trailer di ',
@@ -19,13 +23,18 @@ const TESTI = {
   criptatoSotto: 'materiale criptato',
   criptatoTesto: 'Mi spiace, non hai accesso a questo materiale.',
   criptatoInvito: '› Hai l\'invito? Clicca ed entra con quell\'account Google.',
-  piede: 'lilith lab',
+  portaSigla: '▓▓ ACCESSO RISERVATO ▓▓',
+  portaBenvenuto: 'Benvenuto, straniero. Anzi, dovrei chiamarti l\'eletto.',
+  portaApri: 'Apri la porta',
+  piede: 'lilith lab · versioni alpha su invito',
   mesi: ['gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno', 'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre']
 };
 
 const MODELLO_DATA = /^\d{4}-\d{2}-\d{2}$/;
 // La forma di «Copia link» di Drive: https://drive.google.com/file/d/<id>/view?usp=sharing
 const MODELLO_DRIVE = /^https:\/\/drive\.google\.com\/file\/d\/([\w-]+)\/view(\?[^#\s]*)?$/;
+// La forma del link precompilato di Google Moduli, con PROGETTO come risposta da sostituire.
+const MODELLO_MODULO = /^https:\/\/docs\.google\.com\/forms\/d\/e\/[\w-]+\/viewform\?[^#\s]*=PROGETTO(&[^#\s]*)?$/;
 
 // La data si guarda col modello prima di leggerla, e si legge in UTC perché il fuso non sposti il giorno.
 function scriviData(testo) {
@@ -50,6 +59,8 @@ function linkEsterno(indirizzo, testo, classe) {
   link.rel = 'noopener';
   return link;
 }
+
+const idScheda = voce => 'scheda-' + voce.id;
 
 // Un trailer alla volta: il riquadro di Drive si carica solo al clic sulla copertina, e quello aperto prima torna
 // copertina. Tre riquadri caricati insieme, e ricaricati per fermarli, si contendevano la rete.
@@ -127,16 +138,31 @@ function disegnaTrailer(voce) {
   return parte;
 }
 
-function disegnaScarica(voce) {
+// Un bottone d'azione: link quando c'è l'indirizzo, spento e «in arrivo» quando manca.
+function disegnaAzione(indirizzo, testo, testoSpento, classe, parte) {
   let bottone;
-  if (!voce.scarica) {
-    bottone = crea('span', 'scarica scarica-spento', TESTI.scaricaSpento);
+  if (!indirizzo) {
+    bottone = crea('span', classe + ' ' + classe + '-spento', testoSpento);
     bottone.setAttribute('aria-disabled', 'true');
   } else {
-    bottone = linkEsterno(voce.scarica, TESTI.scarica, 'scarica');
+    bottone = linkEsterno(indirizzo, testo, classe);
   }
-  bottone.dataset.parte = 'scarica';
+  bottone.dataset.parte = parte;
   return bottone;
+}
+
+function disegnaScarica(voce) {
+  return disegnaAzione(voce.scarica, TESTI.scarica, TESTI.scaricaSpento, 'scarica', 'scarica');
+}
+
+// Il link del modulo col nome del progetto già scritto; un link in un'altra forma non si usa.
+function linkFeedback(voce, modulo = MODULO_FEEDBACK) {
+  if (!MODELLO_MODULO.test(modulo)) return '';
+  return modulo.replace('=PROGETTO', '=' + encodeURIComponent(voce.nome));
+}
+
+function disegnaFeedback(voce) {
+  return disegnaAzione(linkFeedback(voce), TESTI.feedback, TESTI.feedbackSpento, 'feedback', 'feedback');
 }
 
 function disegnaElenco(tag, classe, titolo, voci, parte) {
@@ -150,6 +176,7 @@ function disegnaElenco(tag, classe, titolo, voci, parte) {
 
 function disegnaScheda(voce) {
   const scheda = crea('article', 'scheda');
+  scheda.id = idScheda(voce);
   scheda.dataset.id = voce.id;
 
   const versione = crea('p', 'scheda-versione');
@@ -164,6 +191,9 @@ function disegnaScheda(voce) {
   const frase = crea('p', 'scheda-frase', voce.frase);
   frase.dataset.parte = 'frase';
 
+  const azioni = crea('div', 'scheda-azioni');
+  azioni.append(disegnaScarica(voce), disegnaFeedback(voce));
+
   scheda.append(
     versione,
     nome,
@@ -171,7 +201,7 @@ function disegnaScheda(voce) {
     disegnaTrailer(voce),
     disegnaElenco('ul', 'sistemi', TESTI.sistemi, voce.sistemi, 'sistemi'),
     disegnaElenco('ol', 'passi', TESTI.istruzioni, voce.istruzioni, 'istruzioni'),
-    disegnaScarica(voce)
+    azioni
   );
   return scheda;
 }
@@ -179,6 +209,128 @@ function disegnaScheda(voce) {
 // Svuota il contenitore e ridisegna una scheda per voce.
 function disegnaSchede(elenco, contenitore = document.getElementById('schede')) {
   contenitore.replaceChildren(...elenco.map(disegnaScheda));
+}
+
+// Il menù dei progetti: una voce per progetto, un link alla sua scheda.
+function disegnaMenu(elenco, contenitore = document.getElementById('menu-elenco')) {
+  contenitore.replaceChildren(...elenco.map(voce => {
+    const riga = crea('li');
+    const link = crea('a', 'menu-voce', voce.nome);
+    link.href = '#' + idScheda(voce);
+    riga.append(link);
+    return riga;
+  }));
+}
+
+// Il menù si chiude alla scelta, al clic fuori e con Esc, che riporta il fuoco sul bottone.
+function preparaMenu(menu = document.getElementById('menu')) {
+  menu.addEventListener('click', evento => {
+    if (evento.target.closest('.menu-voce')) menu.open = false;
+  });
+  document.addEventListener('click', evento => {
+    if (menu.open && !menu.contains(evento.target)) menu.open = false;
+  });
+  document.addEventListener('keydown', evento => {
+    if (evento.key !== 'Escape' || !menu.open) return;
+    menu.open = false;
+    menu.querySelector('summary').focus();
+  });
+}
+
+// La porta: si apre una volta per scheda del browser. Finché è chiusa, quello che c'è dietro non si raggiunge col Tab.
+const CHIAVE_PORTA = 'lilith-porta';
+const DURATA_PORTA = 1800;
+// L'intro: la frase si decodifica in 40 passi da 40 ms, poi la porta entra in 1,3 s. Un clic la salta.
+const PASSO_DECODIFICA = 40;
+const PASSI_DECODIFICA = 40;
+const DURATA_ENTRATA = 1300;
+const SEGNI_DECODIFICA = '0123456789ABCDEF#%&*+=/';
+const INTRO = new WeakMap();
+
+function portaGiaAperta() {
+  try { return sessionStorage.getItem(CHIAVE_PORTA) === 'aperta'; } catch (e) { return false; }
+}
+
+// Senza memoria della scheda, come in certe finestre private, la porta torna a ogni apertura: niente di peggio.
+function ricordaPorta() {
+  try { sessionStorage.setItem(CHIAVE_PORTA, 'aperta'); } catch (e) { /* niente memoria, la porta tornerà */ }
+}
+
+function dietroLaPorta(chiusa) {
+  document.querySelectorAll('body > :not(.porta)').forEach(el => { el.inert = chiusa; });
+  document.documentElement.classList.toggle('porta-chiusa', chiusa);
+}
+
+function preparaPorta(porta = document.getElementById('porta')) {
+  if (!porta) return;
+  if (portaGiaAperta()) {
+    porta.remove();
+    return;
+  }
+  dietroLaPorta(true);
+  porta.querySelector('.porta-apri').addEventListener('click', () => apriPorta(porta));
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) mostraPorta(porta);
+  else avviaIntro(porta);
+}
+
+// La frase si decodifica da sinistra a destra: le lettere non ancora lette cambiano a ogni passo, gli spazi restano.
+function decodifica(el, testo, fatto) {
+  let passo = 0;
+  const timer = setInterval(() => {
+    passo++;
+    const lette = Math.floor(testo.length * passo / PASSI_DECODIFICA);
+    let riga = testo.slice(0, lette);
+    for (let i = lette; i < testo.length; i++) {
+      riga += testo[i] === ' ' ? ' ' : SEGNI_DECODIFICA[Math.floor(Math.random() * SEGNI_DECODIFICA.length)];
+    }
+    el.textContent = riga;
+    if (passo >= PASSI_DECODIFICA) {
+      clearInterval(timer);
+      fatto();
+    }
+  }, PASSO_DECODIFICA);
+  return timer;
+}
+
+// L'intro: su nero, prima la frase che si decodifica, poi la porta che entra; un clic la salta.
+function avviaIntro(porta) {
+  const stato = { salta: () => mostraPorta(porta), timer: null, fine: null };
+  INTRO.set(porta, stato);
+  porta.classList.add('porta-intro');
+  porta.addEventListener('click', stato.salta);
+  stato.timer = decodifica(porta.querySelector('.porta-decodifica'), TESTI.portaBenvenuto, () => {
+    porta.classList.add('porta-entra');
+    stato.fine = setTimeout(() => mostraPorta(porta), DURATA_ENTRATA);
+  });
+}
+
+// La porta da ferma: tutto in vista, la frase per intero, il fuoco sul bottone. Chiude l'intro, se sta andando.
+function mostraPorta(porta) {
+  const stato = INTRO.get(porta);
+  if (stato) {
+    clearInterval(stato.timer);
+    clearTimeout(stato.fine);
+    porta.removeEventListener('click', stato.salta);
+    INTRO.delete(porta);
+  }
+  porta.classList.remove('porta-intro', 'porta-entra');
+  porta.classList.add('porta-pronta');
+  porta.querySelector('.porta-decodifica').textContent = TESTI.portaBenvenuto;
+  porta.querySelector('.porta-apri').focus();
+}
+
+// Col movimento ridotto la porta sparisce subito; se no le ante si aprono, e alla fine la porta esce dalla pagina.
+function apriPorta(porta = document.getElementById('porta')) {
+  if (!porta || porta.classList.contains('porta-in-apertura')) return;
+  if (INTRO.has(porta)) mostraPorta(porta);
+  ricordaPorta();
+  dietroLaPorta(false);
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    porta.remove();
+    return;
+  }
+  porta.classList.add('porta-in-apertura');
+  setTimeout(() => porta.remove(), DURATA_PORTA);
 }
 
 function scriviTesti() {
@@ -217,4 +369,7 @@ function avviaContatore() {
 scriviTesti();
 riempiEsadecimali();
 disegnaSchede(PROGETTI);
+disegnaMenu(PROGETTI);
+preparaMenu();
+preparaPorta();
 avviaContatore();

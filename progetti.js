@@ -53,3 +53,7 @@ const PROGETTI = [
     scarica: 'https://drive.google.com/file/d/1q1h98Zuobl7NC2V-ARwGi9tRCH-JnIhX/view?usp=drive_link'
   }
 ];
+
+// Il modulo dei feedback, su Google Moduli: il link di «Modulo precompilato» con PROGETTO come risposta alla domanda
+// del progetto. Ogni scheda lo apre col suo nome al posto di PROGETTO; vuoto, i bottoni restano spenti, «in arrivo».
+const MODULO_FEEDBACK = '';

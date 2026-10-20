@@ -5,11 +5,26 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <title>lilith lab — progetti</title>
+<script>
+  // La porta si apre una volta per scheda del browser: già aperta, non la si mostra nemmeno per un attimo.
+  try { if (sessionStorage.getItem('lilith-porta') === 'aperta') document.documentElement.classList.add('porta-aperta'); } catch (e) {}
+</script>
 <link rel="stylesheet" href="stile.css">
 <script defer src="progetti.js"></script>
 <script defer src="pagina.js"></script>
 </head>
 <body>
+<div class="porta" id="porta" data-parte="porta">
+  <div class="porta-anta porta-anta-sinistra" aria-hidden="true"></div>
+  <div class="porta-anta porta-anta-destra" aria-hidden="true"></div>
+  <div class="porta-centro">
+    <div class="porta-volante" aria-hidden="true"></div>
+    <p class="porta-sigla" data-testo="portaSigla"></p>
+    <p class="porta-benvenuto"><span class="solo-lettori" data-testo="portaBenvenuto"></span><span class="porta-decodifica" aria-hidden="true"></span></p>
+    <button class="porta-apri" id="porta-apri" type="button" data-testo="portaApri"></button>
+  </div>
+</div>
+
 <svg class="grana" aria-hidden="true" focusable="false">
   <filter id="grana-filtro">
     <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" stitchTiles="stitch"/>
@@ -27,6 +42,16 @@
     <p class="fascia-testo" data-testo="fasciaTesto"></p>
   </div>
 </div>
+
+<nav class="barra" aria-label="Progetti">
+  <div class="barra-dentro">
+    <span class="barra-marchio" data-testo="barraMarchio"></span>
+    <details class="menu" id="menu" data-parte="menu">
+      <summary class="menu-apri" data-testo="menuApri"></summary>
+      <ul class="menu-elenco" id="menu-elenco"></ul>
+    </details>
+  </div>
+</nav>
 
 <header class="testata">
   <div class="cielo" aria-hidden="true">
