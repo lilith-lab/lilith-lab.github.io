@@ -14,6 +14,11 @@ const TESTI = {
   trailerSpento: 'trailer in arrivo',
   trailerApri: 'Apri il trailer su Drive',
   trailerTitolo: 'Trailer di ',
+  trailerAvvia: '▶ avvia il trailer',
+  criptatoTitolo: '▓▓▓ ACCESSO NEGATO ▓▓▓',
+  criptatoSotto: 'materiale criptato',
+  criptatoTesto: 'Mi spiace, non hai accesso a questo materiale.',
+  criptatoInvito: '› Hai l\'invito? Clicca ed entra con quell\'account Google.',
   piede: 'lilith lab',
   mesi: ['gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno', 'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre']
 };
@@ -46,6 +51,69 @@ function linkEsterno(indirizzo, testo, classe) {
   return link;
 }
 
+// Un trailer alla volta: il riquadro di Drive si carica solo al clic sulla copertina, e quello aperto prima torna
+// copertina. Tre riquadri caricati insieme, e ricaricati per fermarli, si contendevano la rete.
+let trailerAperto = null;
+
+// La riga cifrata: i primi caratteri dell'id di Drive in esadecimale, sempre gli stessi per la stessa scheda.
+function rigaCifrata(id) {
+  const cifre = [...id.slice(0, 12)].map(c => c.charCodeAt(0).toString(16).toUpperCase().padStart(2, '0')).join('');
+  return (cifre.match(/.{1,4}/g) || []).join(' ');
+}
+
+function disegnaCopertina(voce, id) {
+  const copertina = crea('button', 'trailer-riquadro trailer-copertina');
+  copertina.type = 'button';
+  copertina.dataset.id = id;
+  copertina.title = TESTI.trailerTitolo + voce.nome;
+  copertina.addEventListener('click', () => apriTrailer(copertina));
+  segnaAccesso(copertina, 'attesa');
+  provaAccesso(copertina);
+  return copertina;
+}
+
+// Tre stati: attesa, si, no. Nello stato no la copertina dice che il materiale è criptato, ma resta cliccabile:
+// in Safari l'anteprima non arriva nemmeno a chi è invitato, e il riquadro di Drive sì.
+function segnaAccesso(copertina, stato, anteprima) {
+  copertina.dataset.accesso = stato;
+  if (stato === 'no') {
+    copertina.style.backgroundImage = '';
+    copertina.replaceChildren(
+      crea('span', 'copertina-titolo', TESTI.criptatoTitolo),
+      crea('span', 'copertina-sotto', TESTI.criptatoSotto),
+      crea('span', 'copertina-cifre', rigaCifrata(copertina.dataset.id)),
+      crea('span', 'copertina-testo', TESTI.criptatoTesto),
+      crea('span', 'copertina-invito', TESTI.criptatoInvito)
+    );
+    return;
+  }
+  copertina.style.backgroundImage = anteprima ? 'url("' + anteprima + '")' : '';
+  copertina.replaceChildren(crea('span', 'copertina-avvia', TESTI.trailerAvvia));
+}
+
+// L'anteprima di Drive arriva solo a chi ha accesso al file, e in Safari a nessuno: arrivata è una certezza, mancata no.
+function provaAccesso(copertina) {
+  const anteprima = new Image();
+  anteprima.onload = () => segnaAccesso(copertina, 'si', anteprima.src);
+  anteprima.onerror = () => segnaAccesso(copertina, 'no');
+  anteprima.src = 'https://drive.google.com/thumbnail?id=' + copertina.dataset.id + '&sz=w640';
+}
+
+function apriTrailer(copertina) {
+  chiudiTrailer();
+  const cornice = crea('iframe', 'trailer-riquadro');
+  cornice.src = 'https://drive.google.com/file/d/' + copertina.dataset.id + '/preview';
+  cornice.title = copertina.title;
+  cornice.setAttribute('allowfullscreen', '');
+  copertina.replaceWith(cornice);
+  trailerAperto = { cornice, copertina };
+}
+
+function chiudiTrailer() {
+  if (trailerAperto) trailerAperto.cornice.replaceWith(trailerAperto.copertina);
+  trailerAperto = null;
+}
+
 function disegnaTrailer(voce) {
   const parte = crea('div', 'trailer');
   parte.dataset.parte = 'trailer';
@@ -54,14 +122,7 @@ function disegnaTrailer(voce) {
     return parte;
   }
   const drive = MODELLO_DRIVE.exec(voce.trailer);
-  if (drive) {
-    const cornice = crea('iframe', 'trailer-riquadro');
-    cornice.src = 'https://drive.google.com/file/d/' + drive[1] + '/preview';
-    cornice.title = TESTI.trailerTitolo + voce.nome;
-    cornice.setAttribute('loading', 'lazy');
-    cornice.setAttribute('allowfullscreen', '');
-    parte.append(cornice);
-  }
+  if (drive) parte.append(disegnaCopertina(voce, drive[1]));
   parte.append(linkEsterno(voce.trailer, TESTI.trailerApri, 'trailer-apri'));
   return parte;
 }
@@ -153,27 +214,7 @@ function avviaContatore() {
   }, 1000);
 }
 
-// Un trailer che prende il fuoco ferma quello di prima. I riquadri di Drive non dicono alla pagina quando un video
-// parte: la pagina vede solo dove sta il fuoco, e rifà da capo il riquadro lasciato.
-let trailerDiPrima = null;
-
-function ricarica(cornice) {
-  cornice.replaceWith(cornice.cloneNode());
-}
-
-function trailerAttivo(el) {
-  if (!el || !el.matches('iframe.trailer-riquadro') || el === trailerDiPrima) return;
-  if (trailerDiPrima) ricarica(trailerDiPrima);
-  trailerDiPrima = el;
-}
-
-// Il fuoco che passa da un riquadro all'altro non manda eventi alla pagina: si guarda ogni 300 ms.
-function sorvegliaTrailer() {
-  setInterval(() => trailerAttivo(document.activeElement), 300);
-}
-
 scriviTesti();
 riempiEsadecimali();
 disegnaSchede(PROGETTI);
 avviaContatore();
-sorvegliaTrailer();

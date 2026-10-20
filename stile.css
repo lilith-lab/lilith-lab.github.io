@@ -310,6 +310,49 @@ a:focus-visible { outline: 2px solid var(--accento); outline-offset: 3px; }
     #05020a;
 }
 
+/* La copertina del trailer: un bottone grande come il riquadro, che carica Drive solo al clic */
+.trailer-copertina {
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 6px;
+  padding: 16px;
+  font: 13px/1.4 var(--mono);
+  color: var(--testo);
+  text-align: center;
+  cursor: pointer;
+  border: 1px solid var(--scheda-bordo);
+  background-color: #05020a;
+  background-size: cover;
+  background-position: center;
+}
+
+.trailer-copertina:hover { border-color: var(--magenta); }
+.trailer-copertina:focus-visible { outline: 2px solid var(--accento); outline-offset: 3px; }
+
+.copertina-avvia {
+  padding: 8px 14px;
+  letter-spacing: 0.14em;
+  color: var(--accento);
+  background: rgba(6, 3, 11, 0.8);
+  border: 1px solid var(--magenta);
+}
+
+/* Senza anteprima: il messaggio criptato, rosso su nero, con le righe del monitor */
+.trailer-copertina[data-accesso="no"] {
+  border-color: var(--rosso-cupo);
+  background:
+    repeating-linear-gradient(180deg, rgba(255, 46, 77, 0.06) 0 2px, transparent 2px 5px),
+    radial-gradient(ellipse at 50% 120%, rgba(255, 46, 77, 0.18), transparent 60%),
+    #05020a;
+}
+
+.copertina-titolo { font-weight: 700; letter-spacing: 0.18em; color: var(--rosso); }
+.copertina-sotto { font-size: 11px; letter-spacing: 0.3em; text-transform: uppercase; color: var(--testo-tenue); }
+.copertina-cifre { letter-spacing: 0.12em; color: var(--magenta); }
+.copertina-testo { font: 14px/1.4 var(--sans); color: var(--testo); }
+.copertina-invito { color: var(--accento); }
+
 .trailer-apri {
   display: inline-block;
   margin-top: 8px;
