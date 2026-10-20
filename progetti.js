@@ -7,7 +7,7 @@ const PROGETTI = [
     nome: 'tracker-brani',
     frase: 'Una board per i tuoi brani che gira nel browser del computer: niente da installare, niente va su internet.',
     versione: '2026-10-16b',
-    data: '2026-10-19',
+    data: '2026-10-20',
     sistemi: ['Computer, non telefono', 'Chrome o Edge'],
     istruzioni: [
       'Estrai lo zip e metti la cartella tracker-brani in un posto tuo, per esempio Documenti.',
@@ -24,8 +24,8 @@ const PROGETTI = [
     id: 'guida-secondo-cervello',
     nome: 'Costruire un secondo cervello per lavorare con un agente',
     frase: 'Una guida per lavorare con un agente di intelligenza artificiale per mesi, senza perdere il filo.',
-    versione: '2026-10-19',
-    data: '2026-10-19',
+    versione: '2026-10-20',
+    data: '2026-10-20',
     sistemi: ['Computer', 'Browser, senza rete'],
     istruzioni: [
       'Estrai lo zip e metti la cartella guida-secondo-cervello dove vuoi.',
