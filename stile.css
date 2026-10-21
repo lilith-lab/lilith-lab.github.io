@@ -727,7 +727,7 @@ a:focus-visible { outline: 2px solid var(--accento); outline-offset: 3px; }
 .passi li { margin: 6px 0; }
 .passi li::marker { font-family: var(--mono); color: var(--accento); }
 
-/* In fondo alla scheda: il bottone Scarica e, sotto, la riga del feedback */
+/* In fondo alla scheda, i due bottoni: Scarica e il feedback */
 .scheda-azioni {
   margin-top: auto;
   padding-top: 16px;
@@ -737,31 +737,28 @@ a:focus-visible { outline: 2px solid var(--accento); outline-offset: 3px; }
   border-top: 1px solid var(--scheda-bordo);
 }
 
-.scarica {
+.scarica,
+.feedback {
   padding: 10px 18px;
   font: 600 14px/1 var(--mono);
   letter-spacing: 0.08em;
   color: var(--testo);
   text-decoration: none;
   transition: background-color 0.2s;
-  border: 1px solid var(--rosso);
-  background: rgba(255, 46, 77, 0.12);
 }
+
+.scarica { border: 1px solid var(--rosso); background: rgba(255, 46, 77, 0.12); }
 a.scarica:hover { background: rgba(255, 46, 77, 0.24); }
 
-.scarica-spento {
+.feedback { border: 1px solid var(--magenta); background: rgba(194, 24, 122, 0.08); }
+a.feedback:hover { background: rgba(194, 24, 122, 0.2); }
+
+.scarica-spento,
+.feedback-spento {
   color: var(--testo-tenue);
   border: 1px dashed #3d2c4c;
   background: transparent;
   cursor: not-allowed;
-}
-
-.feedback {
-  flex-basis: 100%;
-  margin: 0;
-  font: 12px/1.5 var(--mono);
-  letter-spacing: 0.04em;
-  color: var(--testo-tenue);
 }
 
 .piede {
