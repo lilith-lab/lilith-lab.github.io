@@ -6,15 +6,14 @@ const TESTI = {
   menuApri: 'Progetti',
   fasciaTitolo: 'ALPHA · LAVORI IN CORSO',
   fasciaTesto: 'Versioni in sviluppo, da provare così come sono: ogni segnalazione aiuta a migliorarle.',
-  presentazione: 'Per ogni progetto trovi il trailer, i primi passi, il pacchetto da scaricare e la cartella dove caricare i feedback. Trailer, download e cartella si aprono con l\'account Google a cui è arrivato l\'invito.',
+  presentazione: 'Per ogni progetto trovi il trailer, i primi passi e il pacchetto da scaricare. Trailer e download si aprono con l\'account Google a cui è arrivato l\'invito; i feedback vanno nella tua cartella, col link nell\'email d\'invito.',
   etichetta: 'alpha · ',
   consegna: 'consegna del ',
   sistemi: 'Sistemi',
   istruzioni: 'Come si usa',
   scarica: 'Scarica',
   scaricaSpento: 'Scarica · in arrivo',
-  feedback: 'Carica un feedback',
-  feedbackSpento: 'Feedback · in arrivo',
+  feedback: 'Feedback · nella tua cartella: il link è nell\'email d\'invito',
   trailerSpento: 'trailer in arrivo',
   trailerApri: 'Apri il trailer su Drive',
   trailerTitolo: 'Trailer di ',
@@ -45,8 +44,6 @@ const TESTI = {
 const MODELLO_DATA = /^\d{4}-\d{2}-\d{2}$/;
 // La forma di «Copia link» di Drive: https://drive.google.com/file/d/<id>/view?usp=sharing
 const MODELLO_DRIVE = /^https:\/\/drive\.google\.com\/file\/d\/([\w-]+)\/view(\?[^#\s]*)?$/;
-// La forma di «Copia link» di una cartella di Drive: https://drive.google.com/drive/folders/<id>?usp=sharing
-const MODELLO_CARTELLA = /^https:\/\/drive\.google\.com\/drive\/folders\/([\w-]+)(\?[^#\s]*)?$/;
 
 // La data si guarda col modello prima di leggerla, e si legge in UTC perché il fuso non sposti il giorno.
 function scriviData(testo) {
@@ -196,13 +193,11 @@ function disegnaScarica(voce) {
   return disegnaAzione(voce.scarica, TESTI.scarica, TESTI.scaricaSpento, 'scarica', 'scarica');
 }
 
-// La cartella di Drive dove si carica il file di feedback del progetto; un link in un'altra forma non si usa.
-function linkFeedback(voce) {
-  return MODELLO_CARTELLA.test(voce.feedback || '') ? voce.feedback : '';
-}
-
-function disegnaFeedback(voce) {
-  return disegnaAzione(linkFeedback(voce), TESTI.feedback, TESTI.feedbackSpento, 'feedback', 'feedback');
+// Il feedback non ha un link nella pagina: ogni invitato ha la sua cartella di Drive, col link nell'email d'invito.
+function disegnaFeedback() {
+  const nota = crea('p', 'feedback', TESTI.feedback);
+  nota.dataset.parte = 'feedback';
+  return nota;
 }
 
 function disegnaElenco(tag, classe, titolo, voci, parte) {
@@ -232,7 +227,7 @@ function disegnaScheda(voce) {
   frase.dataset.parte = 'frase';
 
   const azioni = crea('div', 'scheda-azioni');
-  azioni.append(disegnaScarica(voce), disegnaFeedback(voce));
+  azioni.append(disegnaScarica(voce), disegnaFeedback());
 
   scheda.append(
     versione,
@@ -729,7 +724,7 @@ function riavvolgimento(contesto, uscita, t) {
 }
 
 // Il passaggio del mouse, o del fuoco, su un bersaglio: un blip, uno per bersaglio, non più di uno ogni 70 ms.
-const BERSAGLI_BLIP = '.scheda, .menu-voce, .menu-apri, .scarica, .feedback, .trailer-copertina, .trailer-apri, .porta-apri, .porta-bussa, .porta-rewind, .suoni';
+const BERSAGLI_BLIP = '.scheda, .menu-voce, .menu-apri, .scarica, .trailer-copertina, .trailer-apri, .porta-apri, .porta-bussa, .porta-rewind, .suoni';
 let ultimoBersaglio = null;
 
 function passaggio(evento) {
